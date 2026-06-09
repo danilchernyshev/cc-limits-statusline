@@ -1,0 +1,21 @@
+{
+  "name": "cc-limits-statusline",
+  "owner": {
+    "name": "Danil Chernyshev",
+    "url": "https://github.com/danilchernyshev"
+  },
+  "metadata": {
+    "description": "Marketplace hosting the cc-limits-statusline plugin for Claude Code.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "cc-limits-statusline",
+      "source": "./",
+      "description": "A Claude Code statusline showing real plan limits (5h + 7d), session cost, context usage, and a colour-coded extra-usage signal.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": ["statusline", "rate-limits", "usage", "cost", "claude-code"]
+    }
+  ]
+}

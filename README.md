@@ -81,17 +81,18 @@ The installer copies `statusline.sh` into `~/.claude/` and adds this to your
 
 Reload Claude Code and you're done.
 
-### Option B — as a Claude Code plugin
+### Option B — as a Claude Code plugin (marketplace)
 
-This repo is also a valid Claude Code plugin (see `.claude-plugin/plugin.json`).
-Add it to a marketplace, then:
+This repo doubles as its own Claude Code marketplace. From inside Claude Code:
 
 ```
-/plugin install cc-limits-statusline@<your-marketplace>
+/plugin marketplace add danilchernyshev/cc-limits-statusline
+/plugin install cc-limits-statusline@cc-limits-statusline
 ```
 
 The plugin contributes the statusline via `${CLAUDE_PLUGIN_ROOT}/statusline.sh`,
-so there's nothing to copy by hand.
+so there's nothing to copy by hand. Update later with `/plugin marketplace update
+cc-limits-statusline`.
 
 ### Manual install
 
