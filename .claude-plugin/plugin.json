@@ -1,0 +1,17 @@
+{
+  "name": "cc-limits-statusline",
+  "version": "1.0.0",
+  "description": "A Claude Code statusline that shows your real plan limits (5h session + 7d weekly), session cost, context usage, and a colour-coded extra-usage signal.",
+  "author": {
+    "name": "Danil Chernyshev",
+    "email": "danilchernyshev@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/danilchernyshev/cc-limits-statusline",
+  "repository": "https://github.com/danilchernyshev/cc-limits-statusline",
+  "license": "MIT",
+  "keywords": ["statusline", "rate-limits", "usage", "cost", "claude-code"],
+  "statusLine": {
+    "type": "command",
+    "command": "bash ${CLAUDE_PLUGIN_ROOT}/statusline.sh"
+  }
+}

@@ -1,0 +1,7 @@
+# Editor / OS noise
+*.swp
+*~
+.DS_Store
+
+# settings.json backups created by install.sh (in case anyone runs it in-repo)
+settings.json.bak.*
