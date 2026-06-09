@@ -1,6 +1,6 @@
 {
   "name": "cc-limits-statusline",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Claude Code statusline that shows your real plan limits (5h session + 7d weekly), session cost, context usage, and a colour-coded extra-usage signal.",
   "author": {
     "name": "Danil Chernyshev",
