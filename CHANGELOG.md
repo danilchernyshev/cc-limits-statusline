@@ -22,6 +22,10 @@ All notable changes to this project are documented here. The format is based on
 ### Changed
 - Renamed the `EXTRA_HEAVY` threshold to `DOUBLE_AT`, now read from the config
   file (default unchanged: `101`).
+- Reworked the extra‑usage field from `Extra-Usage-ON: [y] sts:●` to
+  `Extra-Usage: ON ●` / `Extra-Usage: OFF` — it shows the current account state
+  in plain words; the coloured `●` dot follows only when extra usage is `ON`
+  (hidden when `OFF`, since no overage can start).
 - Refined the plan tag to distinguish Max tiers (`[Max 20x]` / `[Max 5x]`) by
   reading `organizationRateLimitTier`, since `organizationType` is the generic
   `claude_max` for every Max plan.

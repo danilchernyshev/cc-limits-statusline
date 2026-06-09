@@ -45,7 +45,7 @@ SHOW_MODEL=${SHOW_MODEL:-1}  # Claude Opus 4.8 — active model
 SHOW_5H=${SHOW_5H:-1}        # 5h 42% (3h 12m) — 5-hour session window
 SHOW_7D=${SHOW_7D:-1}        # 7d 18% (5d 4h)  — 7-day weekly window
 SHOW_CTX=${SHOW_CTX:-1}      # ctx 31%         — context window used
-SHOW_EXTRA=${SHOW_EXTRA:-1}  # Extra-Usage-ON: [y] sts:● — overage flag + dot
+SHOW_EXTRA=${SHOW_EXTRA:-1}  # Extra-Usage: ON ● — overage state + status dot
 SHOW_COST=${SHOW_COST:-1}    # 💳 $0.00        — current-session cost
 
 R='\033[0m'; DIM='\033[02m'; MAG='\033[01;35m'; BLUE='\033[01;34m'
@@ -160,15 +160,19 @@ D7_C=$(color_for "$D7I")
 COST_F=$(printf '%.2f' "$COST")
 
 # --- extra-usage indicator + signal ----------------------------------------
-# Always show an "Extra-Usage-ON: [y/n] sts:●" tag (as its own │-separated
-# field before the cost): [y]/[n] reflects whether paid overage ("extra
-# usage") is enabled, and the ANSI-coloured ● dot signals the WORST of the
-# two limits.
+# Show an "Extra-Usage: ON ●" / "Extra-Usage: OFF" tag (its own │-separated
+# field before the cost). ON/OFF reflects whether paid overage ("extra usage")
+# is enabled on your account. The ANSI-coloured ● dot — signalling the WORST of
+# the two limits — is only shown when extra usage is ON (OFF means no overage
+# can start, so the dot carries no useful signal).
 MAXP=$H5I; [ "$D7I" -gt "$MAXP" ] && MAXP=$D7I
-if [ "$EXTRA" = "true" ]; then YN='y'; else YN='n'; fi
-EXTRA_TAG=$(printf "Extra-Usage-ON: [%s] sts:%s" "$YN" "$(dot_for "$MAXP")")
+if [ "$EXTRA" = "true" ]; then
+  EXTRA_TAG=$(printf "Extra-Usage: ON %s" "$(dot_for "$MAXP")")
+else
+  EXTRA_TAG="Extra-Usage: OFF"
+fi
 
-# Layout: cwd  [plan]  model │ 5h │ 7d │ ctx │ Extra-Usage-ON: [y/n] sts:● │ 💳 cost
+# Layout: cwd  [plan]  model │ 5h │ 7d │ ctx │ Extra-Usage: ON ● │ 💳 cost
 # Build it field by field so any SHOW_*=0 just drops that field (and its
 # separator). cwd/[plan]/model form a space-joined header; the metric fields
 # that follow are │-separated. 💳 (current-session cost) stays last.
