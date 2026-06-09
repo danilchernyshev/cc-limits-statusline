@@ -12,6 +12,13 @@ All notable changes to this project are documented here. The format is based on
   (85) config thresholds; `color_for` now takes optional threshold arguments.
 - Tests for the explicit‑threshold `color_for`, the ctx colour bands, and a
   custom‑`CTX_RED_AT` override.
+- Config robustness: every setting is now validated after the rc file is sourced,
+  so a value left **blank** (`YELLOW_AT=`) or **malformed** (`RED_AT=abc`,
+  `SHOW_CWD=x`) falls back to its built‑in default instead of overriding it or
+  emitting an arithmetic error. (Omitted/commented lines already defaulted.)
+  Thresholds accept a non‑negative integer; `SHOW_*` flags accept `0`/`1`. Added
+  `int_or`/`flag_or` helpers and unit + integration tests covering blank, garbage,
+  and empty‑file configs.
 
 ### Changed
 - Widened the default colour bands so red signals an *actual* overage: `RED_AT`

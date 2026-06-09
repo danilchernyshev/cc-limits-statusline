@@ -22,41 +22,69 @@
 
 CFG="${CC_STATUSLINE_CONFIG:-$HOME/.claude.json}"
 
-# --- user config (defaults; overridable from the rc file, see below) --------
-# These are the DEFAULTS. They are overridden by the rc file sourced in main
-# (CC_STATUSLINE_RC, default ~/.config/cc-limits-statusline.conf). Defining them
-# here means a sourced unit test (which never sees the rc) always gets defaults.
+# --- user config: built-in defaults + validation ---------------------------
+# The DEFAULTS live here, in the script itself — never in a separate file that a
+# user could delete and leave nothing to fall back to. The rc file
+# (CC_STATUSLINE_RC, default ~/.config/cc-limits-statusline.conf) only carries
+# *overrides*; anything it doesn't set keeps the value below.
 #
-# Colour thresholds (percentages). The "worst-of-two" limit is coloured:
-#   < YELLOW_AT          green   (plenty of headroom — not paying)
-#   YELLOW_AT..RED_AT-1  yellow  (getting close to the limit)
-#   RED_AT..DOUBLE_AT-1  red ●   (at the limit → paid overage about to start)
-#   >= DOUBLE_AT         red ●●  (over the limit, paid overage is active)
-YELLOW_AT=${YELLOW_AT:-80}
-RED_AT=${RED_AT:-100}
-DOUBLE_AT=${DOUBLE_AT:-120}
+# apply_defaults() is the single source of truth for those values. It is called
+# twice: once now (so a sourced unit test, which never reads the rc, gets pristine
+# defaults) and again right after the rc is sourced in main. The second call is
+# what makes the fallback robust — int_or/flag_or validate every setting, so a
+# line the user left blank (YELLOW_AT=) or malformed (RED_AT=abc, SHOW_CWD=x)
+# degrades to its default instead of overriding it or crashing the arithmetic in
+# color_for/dot_for downstream. A deleted line is already covered (the variable
+# stays unset → default); this also covers blank and garbage values.
 
-# Context-window thresholds — keyed to when it pays to run /compact, NOT to
-# billing (a full context costs nothing, it just gets auto-compacted). Claude
-# Code only auto-compacts when the window is nearly full, so the colour nudges
-# you to compact at a natural breakpoint first:
-#   < CTX_YELLOW_AT     green   (plenty of room, no need to compact)
-#   ..CTX_RED_AT-1      yellow  (good time to /compact at a natural stopping point)
-#   >= CTX_RED_AT       red     (compact now — auto-compact is imminent)
-CTX_YELLOW_AT=${CTX_YELLOW_AT:-70}
-CTX_RED_AT=${CTX_RED_AT:-85}
+# Echo $1 if it is a non-negative integer, else the fallback $2.
+int_or() {
+  case "$1" in
+    ''|*[!0-9]*) printf '%s' "$2" ;;
+    *)           printf '%s' "$1" ;;
+  esac
+}
+# Echo $1 if it is exactly 0 or 1 (a show/hide flag), else the fallback $2.
+flag_or() {
+  case "$1" in
+    0|1) printf '%s' "$1" ;;
+    *)   printf '%s' "$2" ;;
+  esac
+}
 
-# Field visibility (1 = show, 0 = hide). The line is built from whichever of
-# these are enabled, in this order, so hiding one just drops it (and its
-# separator) cleanly.
-SHOW_CWD=${SHOW_CWD:-1}      # ~/dev/myproject — current working directory
-SHOW_PLAN=${SHOW_PLAN:-1}    # [Max 20x]       — subscription plan
-SHOW_MODEL=${SHOW_MODEL:-1}  # Claude Opus 4.8 — active model
-SHOW_5H=${SHOW_5H:-1}        # 5h 42% (3h 12m) — 5-hour session window
-SHOW_7D=${SHOW_7D:-1}        # 7d 18% (5d 4h)  — 7-day weekly window
-SHOW_CTX=${SHOW_CTX:-1}      # ctx 31%         — context window used
-SHOW_EXTRA=${SHOW_EXTRA:-1}  # Extra-Usage: ON ● — overage state + status dot
-SHOW_COST=${SHOW_COST:-1}    # 💳 $0.00        — current-session cost
+apply_defaults() {
+  # Colour thresholds (percentages). The "worst-of-two" limit is coloured:
+  #   < YELLOW_AT          green   (plenty of headroom — not paying)
+  #   YELLOW_AT..RED_AT-1  yellow  (getting close to the limit)
+  #   RED_AT..DOUBLE_AT-1  red ●   (at the limit → paid overage about to start)
+  #   >= DOUBLE_AT         red ●●  (over the limit, paid overage is active)
+  YELLOW_AT=$(int_or "${YELLOW_AT-}" 80)
+  RED_AT=$(int_or "${RED_AT-}" 100)
+  DOUBLE_AT=$(int_or "${DOUBLE_AT-}" 120)
+
+  # Context-window thresholds — keyed to when it pays to run /compact, NOT to
+  # billing (a full context costs nothing, it just gets auto-compacted). Claude
+  # Code only auto-compacts when the window is nearly full, so the colour nudges
+  # you to compact at a natural breakpoint first:
+  #   < CTX_YELLOW_AT     green   (plenty of room, no need to compact)
+  #   ..CTX_RED_AT-1      yellow  (good time to /compact at a natural stop)
+  #   >= CTX_RED_AT       red     (compact now — auto-compact is imminent)
+  CTX_YELLOW_AT=$(int_or "${CTX_YELLOW_AT-}" 70)
+  CTX_RED_AT=$(int_or "${CTX_RED_AT-}" 85)
+
+  # Field visibility (1 = show, 0 = hide). The line is built from whichever of
+  # these are enabled, in display order, so hiding one drops it (and its
+  # separator) cleanly.
+  SHOW_CWD=$(flag_or "${SHOW_CWD-}" 1)      # ~/dev/myproject — current working dir
+  SHOW_PLAN=$(flag_or "${SHOW_PLAN-}" 1)    # [Max 20x]       — subscription plan
+  SHOW_MODEL=$(flag_or "${SHOW_MODEL-}" 1)  # Claude Opus 4.8 — active model
+  SHOW_5H=$(flag_or "${SHOW_5H-}" 1)        # 5h 42% (3h 12m) — 5-hour window
+  SHOW_7D=$(flag_or "${SHOW_7D-}" 1)        # 7d 18% (5d 4h)  — 7-day window
+  SHOW_CTX=$(flag_or "${SHOW_CTX-}" 1)      # ctx 31%         — context window used
+  SHOW_EXTRA=$(flag_or "${SHOW_EXTRA-}" 1)  # Extra-Usage: ON ● — overage + dot
+  SHOW_COST=$(flag_or "${SHOW_COST-}" 1)    # 💳 $0.00        — session cost
+}
+apply_defaults
 
 R='\033[0m'; DIM='\033[02m'; MAG='\033[01;35m'; BLUE='\033[01;34m'
 
@@ -123,6 +151,9 @@ fmt_reset() {
 RC="${CC_STATUSLINE_RC:-$HOME/.config/cc-limits-statusline.conf}"
 # shellcheck disable=SC1090
 [ -f "$RC" ] && . "$RC"
+# Re-validate after the rc: any setting it left blank or malformed falls back to
+# its built-in default here (a setting it simply omitted already kept the default).
+apply_defaults
 
 input=$(cat)
 
