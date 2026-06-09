@@ -33,8 +33,13 @@ assert_not_contains() { # desc haystack needle
 strip_ansi() { sed "s/${ESC}\[[0-9;]*m//g"; }
 
 # Render the status line for a given stdin payload + config, ANSI stripped.
+# CC_STATUSLINE_RC is pinned to /dev/null so a real ~/.config rc on the test
+# machine can't leak in; render_rc points it at a fixture rc instead.
 render() { # stdin_json config_json
-  printf '%s' "$1" | CC_STATUSLINE_CONFIG="$2" bash "$SCRIPT" | strip_ansi
+  printf '%s' "$1" | CC_STATUSLINE_CONFIG="$2" CC_STATUSLINE_RC=/dev/null bash "$SCRIPT" | strip_ansi
+}
+render_rc() { # stdin_json config_json rc_file
+  printf '%s' "$1" | CC_STATUSLINE_CONFIG="$2" CC_STATUSLINE_RC="$3" bash "$SCRIPT" | strip_ansi
 }
 
 # Expose the pure functions for unit testing (guard stops the script's main).
@@ -117,6 +122,32 @@ echo "== integration: empty stdin is graceful =="
 OUT="$(render '{}' "$FIX/config_pro.json")"
 assert_contains "falls back, no crash" "$OUT" "[Pro]"
 assert_contains "zero percentages"     "$OUT" "5h 0%"
+
+echo "== config: custom thresholds via rc =="
+# Lower the thresholds so a 55% worst-of-two trips the double dot.
+RC_LOW="$(mktemp)"; printf 'YELLOW_AT=20\nRED_AT=40\nDOUBLE_AT=50\n' > "$RC_LOW"
+OUT="$(render_rc "$(cat "$FIX/stdin_basic.json")" "$FIX/config_max.json" "$RC_LOW")"
+assert_contains "55% trips double dot" "$OUT" "sts:●●"
+rm -f "$RC_LOW"
+
+echo "== config: hide fields via rc =="
+RC_HIDE="$(mktemp)"; printf 'SHOW_COST=0\nSHOW_CTX=0\nSHOW_EXTRA=0\n' > "$RC_HIDE"
+OUT="$(render_rc "$(cat "$FIX/stdin_basic.json")" "$FIX/config_max.json" "$RC_HIDE")"
+assert_not_contains "cost hidden"  "$OUT" "💳"
+assert_not_contains "ctx hidden"   "$OUT" "ctx"
+assert_not_contains "extra hidden" "$OUT" "Extra-Usage"
+assert_contains     "5h still shown" "$OUT" "5h 55%"
+assert_contains     "plan still shown" "$OUT" "[Max]"
+rm -f "$RC_HIDE"
+
+echo "== config: hide the whole header (cwd/plan/model) -> line starts at 5h =="
+RC_NOHDR="$(mktemp)"; printf 'SHOW_CWD=0\nSHOW_PLAN=0\nSHOW_MODEL=0\n' > "$RC_NOHDR"
+OUT="$(render_rc "$(cat "$FIX/stdin_basic.json")" "$FIX/config_max.json" "$RC_NOHDR")"
+assert_not_contains "no cwd"  "$OUT" "~/dev/myproject"
+assert_not_contains "no plan" "$OUT" "[Max]"
+assert_contains "first field is 5h, no leading separator" "$OUT" "5h 55%"
+case "$OUT" in "│"*|" │"*) bad "no leading │" "line starts with a separator: [$OUT]";; *) ok "no leading │";; esac
+rm -f "$RC_NOHDR"
 
 echo
 printf 'Result: \033[32m%d passed\033[0m, ' "$PASS"

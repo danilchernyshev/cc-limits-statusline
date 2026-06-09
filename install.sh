@@ -39,5 +39,20 @@ jq --arg cmd "bash $DEST" \
    "$SETTINGS" > "$tmp" && mv "$tmp" "$SETTINGS"
 echo "✓ updated $SETTINGS (backup saved alongside it)"
 
+# 3) Seed the user config (thresholds + field visibility) if absent. Never
+# overwrite an existing one. It is optional — the script has built-in defaults.
+RC="${CC_STATUSLINE_RC:-$HOME/.config/cc-limits-statusline.conf}"
+if [ ! -f "$RC" ]; then
+  mkdir -p "$(dirname "$RC")"
+  if [ -f "$SCRIPT_DIR/config.example.conf" ]; then
+    cp "$SCRIPT_DIR/config.example.conf" "$RC"
+  else
+    curl -fsSL "$REPO_RAW/config.example.conf" -o "$RC"
+  fi
+  echo "✓ wrote default config → $RC (edit to tune thresholds / hide fields)"
+else
+  echo "• kept existing config → $RC"
+fi
+
 echo
 echo "Done. Start or reload Claude Code to see the new statusline."

@@ -40,7 +40,7 @@ enabled on your account — `[y]` when it is, `[n]` when it isn't — followed b
 | 🟢 `●` | worst limit `< 80%`          | Enabled, plenty of headroom — not paying |
 | 🟡 `●` | `80–94%`                     | Getting close to the limit               |
 | 🔴 `●` | `95–100%`                    | At the limit → paid overage about to start / active |
-| 🔴 `●●`| `≥ 101%` (`EXTRA_HEAVY`)     | Over the limit, paid overage is active   |
+| 🔴 `●●`| `≥ 101%` (`DOUBLE_AT`)       | Over the limit, paid overage is active   |
 
 > **Why a text `●` and not ⚡ or a 🟢 emoji?** Emoji like ⚡ are rendered by the
 > terminal in their own fixed colour and ignore ANSI colour codes, so a
@@ -48,8 +48,44 @@ enabled on your account — `[y]` when it is, `[n]` when it isn't — followed b
 > `●` (U+25CF) instead takes its colour from ANSI — so it matches the rest of
 > the line, tracks your terminal theme, and keeps a single‑cell width.
 
-The `EXTRA_HEAVY` threshold (default `120`) is a plain variable near the top of
-`statusline.sh` — change it to taste.
+All three thresholds (and which fields show at all) are configurable — see
+[Configuration](#configuration).
+
+## Configuration
+
+The statusline reads an optional config file
+(`~/.config/cc-limits-statusline.conf`, override with the `CC_STATUSLINE_RC`
+env var). The installer seeds it from
+[`config.example.conf`](config.example.conf) if you don't have one; without a
+file the built-in defaults apply. It's sourced as bash — plain `NAME=value`
+lines, no restart needed. Anything left out keeps its default.
+
+### Colour thresholds
+
+The colour of the worst-of-two limit (and the `●`/`●●` dot) is driven by three
+percentages:
+
+```bash
+YELLOW_AT=80    # >= this → 🟡 yellow (getting close)
+RED_AT=95       # >= this → 🔴 red    (at the limit, overage starting)
+DOUBLE_AT=101   # >= this → 🔴 ●●     (over the limit, overage active)
+```
+
+### Show / hide fields
+
+Each field can be toggled with `1` (show) / `0` (hide). Hiding one drops its
+`│` separator too:
+
+```bash
+SHOW_CWD=1      # ~/dev/myproject — current working directory
+SHOW_PLAN=1     # [Max 20x]       — subscription plan
+SHOW_MODEL=1    # Claude Opus 4.8 — active model
+SHOW_5H=1       # 5h 42% (3h 12m) — 5-hour session window
+SHOW_7D=1       # 7d 18% (5d 4h)  — 7-day weekly window
+SHOW_CTX=1      # ctx 31%         — context window used
+SHOW_EXTRA=1    # Extra-Usage-ON: [y] sts:● — overage flag + status dot
+SHOW_COST=1     # 💳 $0.00        — current-session cost
+```
 
 ## Requirements
 
@@ -105,6 +141,9 @@ cc-limits-statusline`.
 1. Copy `statusline.sh` anywhere (e.g. `~/.claude/statusline.sh`).
 2. `chmod +x ~/.claude/statusline.sh`
 3. Add the `statusLine` block above to `~/.claude/settings.json`.
+4. *(Optional)* `cp config.example.conf ~/.config/cc-limits-statusline.conf`
+   and edit it to tune thresholds or hide fields — see
+   [Configuration](#configuration).
 
 ## How it works
 

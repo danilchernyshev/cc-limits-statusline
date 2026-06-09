@@ -22,8 +22,31 @@
 
 CFG="${CC_STATUSLINE_CONFIG:-$HOME/.claude.json}"
 
-# At/over this percentage the dot doubles (●●) — past the limit, into overage.
-EXTRA_HEAVY=101
+# --- user config (defaults; overridable from the rc file, see below) --------
+# These are the DEFAULTS. They are overridden by the rc file sourced in main
+# (CC_STATUSLINE_RC, default ~/.config/cc-limits-statusline.conf). Defining them
+# here means a sourced unit test (which never sees the rc) always gets defaults.
+#
+# Colour thresholds (percentages). The "worst-of-two" limit is coloured:
+#   < YELLOW_AT          green   (plenty of headroom — not paying)
+#   YELLOW_AT..RED_AT-1  yellow  (getting close to the limit)
+#   RED_AT..DOUBLE_AT-1  red ●   (at the limit → paid overage about to start)
+#   >= DOUBLE_AT         red ●●  (over the limit, paid overage is active)
+YELLOW_AT=${YELLOW_AT:-80}
+RED_AT=${RED_AT:-95}
+DOUBLE_AT=${DOUBLE_AT:-101}
+
+# Field visibility (1 = show, 0 = hide). The line is built from whichever of
+# these are enabled, in this order, so hiding one just drops it (and its
+# separator) cleanly.
+SHOW_CWD=${SHOW_CWD:-1}      # ~/dev/myproject — current working directory
+SHOW_PLAN=${SHOW_PLAN:-1}    # [Max 20x]       — subscription plan
+SHOW_MODEL=${SHOW_MODEL:-1}  # Claude Opus 4.8 — active model
+SHOW_5H=${SHOW_5H:-1}        # 5h 42% (3h 12m) — 5-hour session window
+SHOW_7D=${SHOW_7D:-1}        # 7d 18% (5d 4h)  — 7-day weekly window
+SHOW_CTX=${SHOW_CTX:-1}      # ctx 31%         — context window used
+SHOW_EXTRA=${SHOW_EXTRA:-1}  # Extra-Usage-ON: [y] sts:● — overage flag + dot
+SHOW_COST=${SHOW_COST:-1}    # 💳 $0.00        — current-session cost
 
 R='\033[0m'; DIM='\033[02m'; MAG='\033[01;35m'; BLUE='\033[01;34m'
 
@@ -41,27 +64,28 @@ plan_label() {
   esac
 }
 
-# --- colour a percentage: <80 green, 80-94 yellow, >=95 red ----------------
+# --- colour a percentage by the configured thresholds ----------------------
+# < YELLOW_AT green, YELLOW_AT..RED_AT-1 yellow, >= RED_AT red.
 color_for() {
   local p=$1
-  if   [ "$p" -ge 95 ]; then printf '\033[01;31m'   # red (bold)
-  elif [ "$p" -ge 80 ]; then printf '\033[33m'      # yellow
-  else                       printf '\033[32m'; fi   # green
+  if   [ "$p" -ge "$RED_AT" ];    then printf '\033[01;31m'   # red (bold)
+  elif [ "$p" -ge "$YELLOW_AT" ]; then printf '\033[33m'      # yellow
+  else                                 printf '\033[32m'; fi   # green
 }
 
 # --- the ANSI-coloured extra-usage dot for the worst-of-two percentage ------
 # Colours match color_for; a plain text glyph (U+25CF) is used instead of a
 # 🟢/🔴 emoji so the colour comes from ANSI and tracks the terminal theme:
-#   ● green  < 80%            (plenty of headroom, not spending money)
-#   ● yellow 80–94%           (getting close to the limit)
-#   ● red    95% .. EXTRA_HEAVY-1   (at the limit → paid overage starting/active)
-#   ●● red   ≥ EXTRA_HEAVY%    (over the limit, paid overage is active)
+#   ● green  < YELLOW_AT            (plenty of headroom, not spending money)
+#   ● yellow YELLOW_AT..RED_AT-1    (getting close to the limit)
+#   ● red    RED_AT..DOUBLE_AT-1    (at the limit → paid overage starting/active)
+#   ●● red   ≥ DOUBLE_AT            (over the limit, paid overage is active)
 dot_for() {
   local p=$1
-  if   [ "$p" -ge "$EXTRA_HEAVY" ]; then printf '\033[01;31m●●\033[0m'
-  elif [ "$p" -ge 95 ];            then printf '\033[01;31m●\033[0m'
-  elif [ "$p" -ge 80 ];            then printf '\033[33m●\033[0m'
-  else                                  printf '\033[32m●\033[0m'; fi
+  if   [ "$p" -ge "$DOUBLE_AT" ]; then printf '\033[01;31m●●\033[0m'
+  elif [ "$p" -ge "$RED_AT" ];    then printf '\033[01;31m●\033[0m'
+  elif [ "$p" -ge "$YELLOW_AT" ]; then printf '\033[33m●\033[0m'
+  else                                 printf '\033[32m●\033[0m'; fi
 }
 
 # --- humanise the time left until a reset (from a unix timestamp) ----------
@@ -81,6 +105,13 @@ fmt_reset() {
 [ "${BASH_SOURCE[0]}" = "${0}" ] || return 0
 
 # ===== main ================================================================
+# Load the user rc file (if any) so it can override the thresholds and SHOW_*
+# flags defined at the top. Sourced only here in main, so unit tests that source
+# this script keep the pristine defaults. Override the path with CC_STATUSLINE_RC.
+RC="${CC_STATUSLINE_RC:-$HOME/.config/cc-limits-statusline.conf}"
+# shellcheck disable=SC1090
+[ -f "$RC" ] && . "$RC"
+
 input=$(cat)
 
 # --- jq is required; degrade gracefully if it is missing -------------------
@@ -138,10 +169,29 @@ if [ "$EXTRA" = "true" ]; then YN='y'; else YN='n'; fi
 EXTRA_TAG=$(printf "Extra-Usage-ON: [%s] sts:%s" "$YN" "$(dot_for "$MAXP")")
 
 # Layout: cwd  [plan]  model │ 5h │ 7d │ ctx │ Extra-Usage-ON: [y/n] sts:● │ 💳 cost
-# Only the plan is bracketed; the overage tag is its own field right before the
-# cost. 💳 (current-session cost) stays last.
-printf "${BLUE}%s${R} ${MAG}[%s]${R} %s ${DIM}│${R} 5h ${H5_C}%s%%${R} ${DIM}(%s)${R} ${DIM}│${R} 7d ${D7_C}%s%%${R} ${DIM}(%s)${R} ${DIM}│ ctx %s%%${R} ${DIM}│${R} %s ${DIM}│${R} 💳 \$%s" \
-  "$CWD" "$PLAN" "$MODEL" \
-  "$H5_PCT" "$(fmt_reset "$H5_RESET")" \
-  "$D7_PCT" "$(fmt_reset "$D7_RESET")" \
-  "$CTX" "$EXTRA_TAG" "$COST_F"
+# Build it field by field so any SHOW_*=0 just drops that field (and its
+# separator). cwd/[plan]/model form a space-joined header; the metric fields
+# that follow are │-separated. 💳 (current-session cost) stays last.
+# Built via printf so the \033 escapes in DIM/R become real ESC bytes (the line
+# itself is emitted with `printf '%s'`, which would not interpret them).
+SEP=$(printf " ${DIM}│${R} ")
+LINE=""
+add() { # value  — append with the │ separator, or as the first field
+  [ -z "$1" ] && return
+  if [ -n "$LINE" ]; then LINE="$LINE$SEP$1"; else LINE="$1"; fi
+}
+
+# Header group (cwd [plan] model), space-joined into one field.
+HDR=""
+[ "$SHOW_CWD" = 1 ]   && HDR=$(printf "${BLUE}%s${R}" "$CWD")
+[ "$SHOW_PLAN" = 1 ]  && HDR="${HDR:+$HDR }$(printf "${MAG}[%s]${R}" "$PLAN")"
+[ "$SHOW_MODEL" = 1 ] && HDR="${HDR:+$HDR }$MODEL"
+add "$HDR"
+
+[ "$SHOW_5H" = 1 ]    && add "$(printf "5h ${H5_C}%s%%${R} ${DIM}(%s)${R}" "$H5_PCT" "$(fmt_reset "$H5_RESET")")"
+[ "$SHOW_7D" = 1 ]    && add "$(printf "7d ${D7_C}%s%%${R} ${DIM}(%s)${R}" "$D7_PCT" "$(fmt_reset "$D7_RESET")")"
+[ "$SHOW_CTX" = 1 ]   && add "$(printf "${DIM}ctx %s%%${R}" "$CTX")"
+[ "$SHOW_EXTRA" = 1 ] && add "$EXTRA_TAG"
+[ "$SHOW_COST" = 1 ]  && add "$(printf "💳 \$%s" "$COST_F")"
+
+printf '%s' "$LINE"

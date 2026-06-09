@@ -5,7 +5,23 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- Optional config file (`~/.config/cc-limits-statusline.conf`, overridable with
+  `CC_STATUSLINE_RC`) sourced on every refresh — no restart needed. See
+  `config.example.conf`.
+  - Configurable colour thresholds: `YELLOW_AT` (80), `RED_AT` (95) and
+    `DOUBLE_AT` (101, was the hard‑coded `EXTRA_HEAVY`).
+  - Per‑field visibility toggles (`SHOW_CWD`, `SHOW_PLAN`, `SHOW_MODEL`,
+    `SHOW_5H`, `SHOW_7D`, `SHOW_CTX`, `SHOW_EXTRA`, `SHOW_COST`) — hiding a field
+    drops its `│` separator too.
+- `install.sh` now seeds the config file from `config.example.conf` if absent
+  (never overwrites an existing one).
+- Tests covering custom thresholds and hidden fields (incl. no leading
+  separator when the whole header is hidden).
+
 ### Changed
+- Renamed the `EXTRA_HEAVY` threshold to `DOUBLE_AT`, now read from the config
+  file (default unchanged: `101`).
 - Refined the plan tag to distinguish Max tiers (`[Max 20x]` / `[Max 5x]`) by
   reading `organizationRateLimitTier`, since `organizationType` is the generic
   `claude_max` for every Max plan.
