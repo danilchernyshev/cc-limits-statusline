@@ -21,7 +21,7 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Test installer logic (PowerShell)
         shell: pwsh
@@ -34,7 +34,7 @@ jobs:
         run: iscc windows\cc-limits-statusline.iss
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: cc-limits-statusline-setup
           path: windows/Output/cc-limits-statusline-setup.exe
