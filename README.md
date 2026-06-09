@@ -5,8 +5,10 @@ plan limits** at a glance — the 5‑hour session window, the 7‑day weekly wi
 your session cost, context usage, and a colour‑coded **extra‑usage signal** so
 you instantly know whether you're about to start paying for overage.
 
+![cc-limits-statusline demo](assets/demo.svg)
+
 ```
-~/dev/myproject [Pro] 🟢 Claude Opus 4.8 │ 5h 42% (3h 12m) │ 7d 18% (5d 4h) │ 💳 $0.00 │ ctx 31%
+~/dev/myproject [Pro $ ●] Claude Opus 4.8 │ 5h 42% (3h 12m) │ 7d 18% (5d 4h) │ ctx 31% │ 💳 $0.00
 ```
 
 ## What it shows
@@ -14,33 +16,36 @@ you instantly know whether you're about to start paying for overage.
 | Field            | Meaning                                                              |
 | ---------------- | ------------------------------------------------------------------- |
 | `~/dev/myproject`| Current working directory                                           |
-| `[Pro]`          | Your subscription plan (Pro / Max / Max 5x / Max 20x / Team / …)    |
-| 🟢 / 🟡 / 🔴      | Extra‑usage signal (only shown when extra usage is enabled)         |
+| `[Pro $ ●]`      | Your subscription plan. The `$` and the coloured `●` appear inside the brackets only when **extra usage** (paid overage) is enabled — see below |
 | `Claude Opus 4.8`| Active model                                                        |
 | `5h 42% (3h 12m)`| 5‑hour session limit used, and time until it resets                |
 | `7d 18% (5d 4h)` | 7‑day weekly limit used, and time until it resets                  |
-| `💳 $0.00`       | Cost of the current session (paid overage / credits)               |
 | `ctx 31%`        | Context window used                                                |
+| `💳 $0.00`       | **Money, kept last:** cost of the *current session* (paid overage / credits) |
+
+All percentages are rounded to whole numbers.
 
 Percentages are colour‑coded: **green** `<80%`, **yellow** `80–94%`,
 **red** `≥95%`.
 
 ### The extra‑usage signal
 
-When **extra usage** (paid overage) is enabled on your account, a coloured
-circle reflects the **worst** of your two limits:
+When **extra usage** (paid overage) is enabled on your account, the plan tag
+shows a `$` and a coloured `●` dot **inside the brackets** (`[Pro $ ●]`). The
+dot's colour reflects the **worst** of your two limits:
 
 | Sign  | When                          | Meaning                                  |
 | ----- | ----------------------------- | ---------------------------------------- |
-| 🟢    | worst limit `< 90%`           | Enabled, plenty of headroom — not paying |
-| 🟡    | `90–99%`                      | Close to the limit, overage about to kick in |
-| 🔴    | `≥ 100%`                      | Limit reached → paid overage is active   |
-| 🔴🔴  | `≥ 120%` (`EXTRA_HEAVY`)      | Leaning heavily on paid overage          |
+| 🟢 `●` | worst limit `< 90%`          | Enabled, plenty of headroom — not paying |
+| 🟡 `●` | `90–99%`                     | Close to the limit, overage about to kick in |
+| 🔴 `●` | `≥ 100%`                     | Limit reached → paid overage is active   |
+| 🔴 `●●`| `≥ 120%` (`EXTRA_HEAVY`)     | Leaning heavily on paid overage          |
 
-> **Why circles and not ⚡?** Emoji like ⚡ are rendered by the terminal in
-> their own fixed colour and ignore ANSI colour codes, so a "coloured lightning
-> bolt" always looks the same yellow. Circle emoji carry the colour *in the
-> glyph*, so the signal is reliably distinct across terminals.
+> **Why a text `●` and not ⚡ or a 🟢 emoji?** Emoji like ⚡ are rendered by the
+> terminal in their own fixed colour and ignore ANSI colour codes, so a
+> "coloured lightning bolt" always looks the same yellow. The plain text glyph
+> `●` (U+25CF) instead takes its colour from ANSI — so it matches the rest of
+> the line, tracks your terminal theme, and keeps a single‑cell width.
 
 The `EXTRA_HEAVY` threshold (default `120`) is a plain variable near the top of
 `statusline.sh` — change it to taste.

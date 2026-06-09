@@ -35,16 +35,18 @@ case "$PLAN_RAW" in
 esac
 
 # --- pull every value we need in a single jq call --------------------------
+# Percentages are rounded to whole numbers (`| round`) so the bar never shows
+# noise like "55.00000000000001%".
 IFS=$'\t' read -r CWD MODEL H5_PCT H5_RESET D7_PCT D7_RESET COST CTX <<EOF
 $(printf '%s' "$input" | jq -r '
   [ .cwd // .workspace.current_dir // "?",
     .model.display_name // "?",
-    (.rate_limits.five_hour.used_percentage // 0),
+    (.rate_limits.five_hour.used_percentage // 0 | round),
     (.rate_limits.five_hour.resets_at // 0),
-    (.rate_limits.seven_day.used_percentage // 0),
+    (.rate_limits.seven_day.used_percentage // 0 | round),
     (.rate_limits.seven_day.resets_at // 0),
     (.cost.total_cost_usd // 0),
-    (.context_window.used_percentage // 0)
+    (.context_window.used_percentage // 0 | round)
   ] | @tsv')
 EOF
 
@@ -80,28 +82,34 @@ H5_C=$(color_for "$H5I")
 D7_C=$(color_for "$D7I")
 COST_F=$(printf '%.2f' "$COST")
 
-# --- extra-usage signal (circle colour = worst of the two limits) ----------
-# NOTE: the ⚡ emoji always renders yellow — terminals ignore ANSI colour for
-# emoji, so we use colour-in-the-glyph circle emoji instead.
-#   🟢 = enabled, worst limit < 90%  (headroom left, not spending money)
-#   🟡 = 90–99%   (close to the limit, paid overage about to start)
-#   🔴 = ≥ 100%   (limit reached → paid overage is active)
-#   🔴🔴 = ≥ EXTRA_HEAVY%  (leaning heavily on paid overage)
+# --- extra-usage indicator + signal ----------------------------------------
+# When paid overage ("extra usage") is enabled, the plan tag gets a "$" marker
+# (e.g. [Pro $]) and an ANSI-coloured ● dot sits right next to it. We use a
+# plain text glyph (U+25CF) instead of a 🟢/🔴 emoji so the colour comes from
+# ANSI — it tracks the terminal theme and keeps a single-cell width.
+# Colour = worst of the two limits:
+#   ● green  < 90%   (headroom left, not spending money)
+#   ● yellow 90–99%  (close to the limit, paid overage about to start)
+#   ● red    ≥ 100%  (limit reached → paid overage is active)
+#   ●● red   ≥ EXTRA_HEAVY%  (leaning heavily on paid overage)
 MAXP=$H5I; [ "$D7I" -gt "$MAXP" ] && MAXP=$D7I
 if [ "$EXTRA" != "true" ]; then
-  MARK=""
-elif [ "$MAXP" -ge "$EXTRA_HEAVY" ]; then
-  MARK=" 🔴🔴"
-elif [ "$MAXP" -ge 100 ]; then
-  MARK=" 🔴"
-elif [ "$MAXP" -ge 90 ]; then
-  MARK=" 🟡"
+  PLAN_X=""; MARK=""
 else
-  MARK=" 🟢"
+  PLAN_X=' $'
+  if   [ "$MAXP" -ge "$EXTRA_HEAVY" ]; then MARK=$(printf ' \033[01;31m●●\033[0m')
+  elif [ "$MAXP" -ge 100 ];           then MARK=$(printf ' \033[01;31m●\033[0m')
+  elif [ "$MAXP" -ge 90 ];            then MARK=$(printf ' \033[33m●\033[0m')
+  else                                      MARK=$(printf ' \033[32m●\033[0m')
+  fi
 fi
 
-printf "${BLUE}%s${R} ${MAG}[%s]${R}${MARK} %s ${DIM}│${R} 5h ${H5_C}%s%%${R} ${DIM}(%s)${R} ${DIM}│${R} 7d ${D7_C}%s%%${R} ${DIM}(%s)${R} ${DIM}│${R} 💳 \$%s ${DIM}│ ctx %s%%${R}" \
-  "$CWD" "$PLAN" "$MODEL" \
+# Layout: cwd  [plan $ ●]  model │ 5h │ 7d │ ctx │ 💳 cost
+# The "$" tag + ● signal live inside the plan brackets; 💳 (current-session
+# cost) stays last. ${MAG} is re-applied after ● (which ends in a reset) so the
+# closing bracket keeps the plan colour.
+printf "${BLUE}%s${R} ${MAG}[%s%s%s${MAG}]${R} %s ${DIM}│${R} 5h ${H5_C}%s%%${R} ${DIM}(%s)${R} ${DIM}│${R} 7d ${D7_C}%s%%${R} ${DIM}(%s)${R} ${DIM}│ ctx %s%%${R} ${DIM}│${R} 💳 \$%s" \
+  "$CWD" "$PLAN" "$PLAN_X" "$MARK" "$MODEL" \
   "$H5_PCT" "$(fmt_reset "$H5_RESET")" \
   "$D7_PCT" "$(fmt_reset "$D7_RESET")" \
-  "$COST_F" "$CTX"
+  "$CTX" "$COST_F"
