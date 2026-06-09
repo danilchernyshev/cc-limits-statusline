@@ -17,9 +17,16 @@ on:
 permissions:
   contents: write   # needed to upload the asset to a release
 
+# upload-artifact@v5 still ships a Node 20 entrypoint; opt into Node 24 now so the
+# runner stops flagging it (it is forced anyway from 2026-06-16).
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   build:
-    runs-on: windows-latest
+    # Pin the image instead of windows-latest, which auto-migrates to this on
+    # 2026-06-15 — pinning silences the redirect notice and keeps builds reproducible.
+    runs-on: windows-2025
     steps:
       - uses: actions/checkout@v5
 
