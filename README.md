@@ -36,10 +36,10 @@ dot's colour reflects the **worst** of your two limits:
 
 | Sign  | When                          | Meaning                                  |
 | ----- | ----------------------------- | ---------------------------------------- |
-| 🟢 `●` | worst limit `< 90%`          | Enabled, plenty of headroom — not paying |
-| 🟡 `●` | `90–99%`                     | Close to the limit, overage about to kick in |
-| 🔴 `●` | `≥ 100%`                     | Limit reached → paid overage is active   |
-| 🔴 `●●`| `≥ 120%` (`EXTRA_HEAVY`)     | Leaning heavily on paid overage          |
+| 🟢 `●` | worst limit `< 80%`          | Enabled, plenty of headroom — not paying |
+| 🟡 `●` | `80–94%`                     | Getting close to the limit               |
+| 🔴 `●` | `95–100%`                    | At the limit → paid overage about to start / active |
+| 🔴 `●●`| `≥ 101%` (`EXTRA_HEAVY`)     | Over the limit, paid overage is active   |
 
 > **Why a text `●` and not ⚡ or a 🟢 emoji?** Emoji like ⚡ are rendered by the
 > terminal in their own fixed colour and ignore ANSI colour codes, so a

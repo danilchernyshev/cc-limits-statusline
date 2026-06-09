@@ -72,8 +72,8 @@ fmt_reset() {
 
 R='\033[0m'; DIM='\033[02m'; MAG='\033[01;35m'; BLUE='\033[01;34m'
 
-# Threshold for "leaning heavily on paid overage" → doubled mark.
-EXTRA_HEAVY=120
+# At/over this percentage the dot doubles (●●) — past the limit, into overage.
+EXTRA_HEAVY=101
 
 # Integer versions of the percentages, for comparisons (values may be floats).
 H5I=${H5_PCT%%.*}; D7I=${D7_PCT%%.*}; H5I=${H5I:-0}; D7I=${D7I:-0}
@@ -87,19 +87,19 @@ COST_F=$(printf '%.2f' "$COST")
 # (e.g. [Pro $]) and an ANSI-coloured ● dot sits right next to it. We use a
 # plain text glyph (U+25CF) instead of a 🟢/🔴 emoji so the colour comes from
 # ANSI — it tracks the terminal theme and keeps a single-cell width.
-# Colour = worst of the two limits:
-#   ● green  < 90%   (headroom left, not spending money)
-#   ● yellow 90–99%  (close to the limit, paid overage about to start)
-#   ● red    ≥ 100%  (limit reached → paid overage is active)
-#   ●● red   ≥ EXTRA_HEAVY%  (leaning heavily on paid overage)
+# Colour = worst of the two limits (matches the percentage colours):
+#   ● green  < 80%     (plenty of headroom, not spending money)
+#   ● yellow 80–94%    (getting close to the limit)
+#   ● red    95–100%   (at the limit → paid overage about to start / active)
+#   ●● red   ≥ EXTRA_HEAVY%  (over the limit, paid overage is active)
 MAXP=$H5I; [ "$D7I" -gt "$MAXP" ] && MAXP=$D7I
 if [ "$EXTRA" != "true" ]; then
   PLAN_X=""; MARK=""
 else
   PLAN_X=' $'
   if   [ "$MAXP" -ge "$EXTRA_HEAVY" ]; then MARK=$(printf ' \033[01;31m●●\033[0m')
-  elif [ "$MAXP" -ge 100 ];           then MARK=$(printf ' \033[01;31m●\033[0m')
-  elif [ "$MAXP" -ge 90 ];            then MARK=$(printf ' \033[33m●\033[0m')
+  elif [ "$MAXP" -ge 95 ];            then MARK=$(printf ' \033[01;31m●\033[0m')
+  elif [ "$MAXP" -ge 80 ];            then MARK=$(printf ' \033[33m●\033[0m')
   else                                      MARK=$(printf ' \033[32m●\033[0m')
   fi
 fi
