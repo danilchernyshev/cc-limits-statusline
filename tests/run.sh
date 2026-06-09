@@ -86,6 +86,21 @@ assert_eq "84 -> yellow"        "${ESC}[33m"    "$(color_for 84 70 85)"
 assert_eq "85 -> red"           "${ESC}[01;31m" "$(color_for 85 70 85)"
 assert_eq "100 -> red"          "${ESC}[01;31m" "$(color_for 100 70 85)"
 
+echo "== unit: int_or (validate numeric settings, else fall back) =="
+assert_eq "valid int kept"     "90" "$(int_or 90 80)"
+assert_eq "zero kept"          "0"  "$(int_or 0 80)"
+assert_eq "blank -> default"   "80" "$(int_or '' 80)"
+assert_eq "garbage -> default" "80" "$(int_or abc 80)"
+assert_eq "float -> default"   "80" "$(int_or 7.5 80)"
+assert_eq "negative -> default" "80" "$(int_or -5 80)"
+
+echo "== unit: flag_or (validate 0/1 flags, else fall back) =="
+assert_eq "1 kept"             "1" "$(flag_or 1 1)"
+assert_eq "0 kept"             "0" "$(flag_or 0 1)"
+assert_eq "blank -> default"   "1" "$(flag_or '' 1)"
+assert_eq "2 -> default"       "1" "$(flag_or 2 1)"
+assert_eq "garbage -> default" "1" "$(flag_or x 1)"
+
 echo "== unit: fmt_reset =="
 assert_eq "past timestamp -> now" "now" "$(fmt_reset 0)"
 assert_contains "far future -> days" "$(fmt_reset $(( $(date +%s) + 90000 )))" "d"
@@ -157,6 +172,40 @@ RC_LOW="$(mktemp)"; printf 'YELLOW_AT=20\nRED_AT=40\nDOUBLE_AT=50\n' > "$RC_LOW"
 OUT="$(render_rc "$(cat "$FIX/stdin_basic.json")" "$FIX/config_max.json" "$RC_LOW")"
 assert_contains "55% trips double dot" "$OUT" "Extra-Usage: ON ●●"
 rm -f "$RC_LOW"
+
+echo "== config: blank / malformed rc values fall back to defaults =="
+# A user who blanks or fat-fingers settings should get defaults, not a crash or
+# wrong colours. Blank YELLOW_AT/RED_AT/DOUBLE_AT must behave like 80/100/120,
+# and a non-numeric CTX_RED_AT must behave like 85.
+RC_BAD="$(mktemp)"
+printf 'YELLOW_AT=\nRED_AT=abc\nDOUBLE_AT=\nCTX_RED_AT=oops\nSHOW_COST=\n' > "$RC_BAD"
+# worst-of-two is 55% (basic fixture) -> green dot, exactly as with the defaults.
+RAW="$(render_raw "$(cat "$FIX/stdin_basic.json")" "$FIX/config_max.json" "$RC_BAD")"
+assert_contains "blank/garbage thresholds -> default green dot" "$RAW" "ON ${ESC}[32m●"
+OUT="$(printf '%s' "$RAW" | strip_ansi)"
+assert_contains "blank SHOW_COST falls back to shown" "$OUT" "💳"
+# No stderr noise from arithmetic on an empty threshold.
+ERR="$(printf '%s' "$(cat "$FIX/stdin_basic.json")" | CC_STATUSLINE_CONFIG="$FIX/config_max.json" CC_STATUSLINE_RC="$RC_BAD" bash "$SCRIPT" 2>&1 >/dev/null)"
+assert_eq "no stderr from bad thresholds" "" "$ERR"
+rm -f "$RC_BAD"
+
+echo "== config: high worst-of-two with blank thresholds still reds out =="
+# 124% over the limit with blank thresholds must still hit the double red dot
+# (proves the defaults were re-applied, not just silently swallowed).
+RC_BLANK="$(mktemp)"; printf 'YELLOW_AT=\nRED_AT=\nDOUBLE_AT=\n' > "$RC_BLANK"
+OUT="$(render_rc "$(cat "$FIX/stdin_high.json")" "$FIX/config_max.json" "$RC_BLANK")"
+assert_contains "124% -> double dot via default DOUBLE_AT" "$OUT" "Extra-Usage: ON ●●"
+rm -f "$RC_BLANK"
+
+echo "== config: empty rc file -> all defaults, full line renders =="
+RC_EMPTY="$(mktemp)"  # zero bytes
+OUT="$(render_rc "$(cat "$FIX/stdin_basic.json")" "$FIX/config_max.json" "$RC_EMPTY")"
+assert_contains "cwd shown"   "$OUT" "~/dev/myproject"
+assert_contains "5h shown"    "$OUT" "5h 55%"
+assert_contains "ctx shown"   "$OUT" "ctx 2%"
+assert_contains "extra shown" "$OUT" "Extra-Usage: ON ●"
+assert_contains "cost shown"  "$OUT" "💳"
+rm -f "$RC_EMPTY"
 
 echo "== config: hide fields via rc =="
 RC_HIDE="$(mktemp)"; printf 'SHOW_COST=0\nSHOW_CTX=0\nSHOW_EXTRA=0\n' > "$RC_HIDE"

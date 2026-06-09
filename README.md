@@ -66,7 +66,13 @@ The statusline reads an optional config file
 env var). The installer seeds it from
 [`config.example.conf`](config.example.conf) if you don't have one; without a
 file the built-in defaults apply. It's sourced as bash — plain `NAME=value`
-lines, no restart needed. Anything left out keeps its default.
+lines, no restart needed.
+
+Every setting has a default baked into the script, so the file is entirely
+optional and safe to trim. A setting you omit, comment out, leave **blank**
+(`YELLOW_AT=`), or set to **garbage** (`RED_AT=abc`) falls back to its default
+rather than breaking the line — thresholds expect a non-negative integer and the
+`SHOW_*` flags expect `0` or `1`; anything else is ignored.
 
 ### Colour thresholds
 
