@@ -20,14 +20,21 @@ you instantly know whether you're about to start paying for overage.
 | `Claude Opus 4.8`           | Active model                                                        |
 | `5h 42% (3h 12m)`           | 5‑hour session limit used, and time until it resets                |
 | `7d 18% (5d 4h)`            | 7‑day weekly limit used, and time until it resets                  |
-| `ctx 31%`                   | Context window used                                                |
+| `ctx 31%`                   | Context window used — colour‑coded by how soon you should `/compact` (green → yellow → red) |
 | `Extra-Usage: ON ●`        | Whether **extra usage** (paid overage) is enabled on your account (`ON`/`OFF`). When `ON`, a coloured `●` status dot follows; when `OFF` the dot is hidden — see below |
 | `💳 $0.00`                  | **Money, kept last:** cost of the *current session* (paid overage / credits) |
 
 All percentages are rounded to whole numbers.
 
-Percentages are colour‑coded: **green** `<80%`, **yellow** `80–94%`,
-**red** `≥95%`.
+The rate‑limit percentages are colour‑coded: **green** `<80%`, **yellow**
+`80–94%`, **red** `≥95%`.
+
+The `ctx` percentage uses its **own** thresholds, keyed to when it pays to run
+`/compact` rather than to billing (a full context costs nothing — Claude Code
+just auto‑compacts it). The colour nudges you to compact at a natural breakpoint
+first: **green** `<70%` (plenty of room), **yellow** `70–84%` (good time to
+`/compact`), **red** `≥85%` (compact now — auto‑compact is imminent). Both
+thresholds are configurable — see [Configuration](#configuration).
 
 ### The extra‑usage signal
 
@@ -70,6 +77,13 @@ percentages:
 YELLOW_AT=80    # >= this → 🟡 yellow (getting close)
 RED_AT=95       # >= this → 🔴 red    (at the limit, overage starting)
 DOUBLE_AT=101   # >= this → 🔴 ●●     (over the limit, overage active)
+```
+
+The `ctx` field has its own pair, keyed to when to `/compact` (not billing):
+
+```bash
+CTX_YELLOW_AT=70   # >= this → 🟡 yellow (good time to /compact)
+CTX_RED_AT=85      # >= this → 🔴 red    (compact now, auto-compact imminent)
 ```
 
 ### Show / hide fields

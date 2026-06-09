@@ -36,6 +36,16 @@ YELLOW_AT=${YELLOW_AT:-80}
 RED_AT=${RED_AT:-95}
 DOUBLE_AT=${DOUBLE_AT:-101}
 
+# Context-window thresholds — keyed to when it pays to run /compact, NOT to
+# billing (a full context costs nothing, it just gets auto-compacted). Claude
+# Code only auto-compacts when the window is nearly full, so the colour nudges
+# you to compact at a natural breakpoint first:
+#   < CTX_YELLOW_AT     green   (plenty of room, no need to compact)
+#   ..CTX_RED_AT-1      yellow  (good time to /compact at a natural stopping point)
+#   >= CTX_RED_AT       red     (compact now — auto-compact is imminent)
+CTX_YELLOW_AT=${CTX_YELLOW_AT:-70}
+CTX_RED_AT=${CTX_RED_AT:-85}
+
 # Field visibility (1 = show, 0 = hide). The line is built from whichever of
 # these are enabled, in this order, so hiding one just drops it (and its
 # separator) cleanly.
@@ -65,12 +75,14 @@ plan_label() {
 }
 
 # --- colour a percentage by the configured thresholds ----------------------
-# < YELLOW_AT green, YELLOW_AT..RED_AT-1 yellow, >= RED_AT red.
+# < yellow green, yellow..red-1 yellow, >= red red. The thresholds default to
+# the worst-of-two limit pair (YELLOW_AT/RED_AT) but can be passed explicitly so
+# the ctx field can use its own /compact-oriented pair (CTX_YELLOW_AT/CTX_RED_AT).
 color_for() {
-  local p=$1
-  if   [ "$p" -ge "$RED_AT" ];    then printf '\033[01;31m'   # red (bold)
-  elif [ "$p" -ge "$YELLOW_AT" ]; then printf '\033[33m'      # yellow
-  else                                 printf '\033[32m'; fi   # green
+  local p=$1 ya=${2:-$YELLOW_AT} ra=${3:-$RED_AT}
+  if   [ "$p" -ge "$ra" ]; then printf '\033[01;31m'   # red (bold)
+  elif [ "$p" -ge "$ya" ]; then printf '\033[33m'      # yellow
+  else                          printf '\033[32m'; fi   # green
 }
 
 # --- the ANSI-coloured extra-usage dot for the worst-of-two percentage ------
@@ -154,9 +166,11 @@ EOF
 
 # Integer versions of the percentages, for comparisons (values may be floats).
 H5I=${H5_PCT%%.*}; D7I=${D7_PCT%%.*}; H5I=${H5I:-0}; D7I=${D7I:-0}
+CTXI=${CTX%%.*}; CTXI=${CTXI:-0}
 
 H5_C=$(color_for "$H5I")
 D7_C=$(color_for "$D7I")
+CTX_C=$(color_for "$CTXI" "$CTX_YELLOW_AT" "$CTX_RED_AT")
 COST_F=$(printf '%.2f' "$COST")
 
 # --- extra-usage indicator + signal ----------------------------------------
@@ -194,7 +208,7 @@ add "$HDR"
 
 [ "$SHOW_5H" = 1 ]    && add "$(printf "5h ${H5_C}%s%%${R} ${DIM}(%s)${R}" "$H5_PCT" "$(fmt_reset "$H5_RESET")")"
 [ "$SHOW_7D" = 1 ]    && add "$(printf "7d ${D7_C}%s%%${R} ${DIM}(%s)${R}" "$D7_PCT" "$(fmt_reset "$D7_RESET")")"
-[ "$SHOW_CTX" = 1 ]   && add "$(printf "${DIM}ctx %s%%${R}" "$CTX")"
+[ "$SHOW_CTX" = 1 ]   && add "$(printf "${DIM}ctx${R} ${CTX_C}%s%%${R}" "$CTX")"
 [ "$SHOW_EXTRA" = 1 ] && add "$EXTRA_TAG"
 [ "$SHOW_COST" = 1 ]  && add "$(printf "💳 \$%s" "$COST_F")"
 

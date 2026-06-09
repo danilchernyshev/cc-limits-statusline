@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- The `ctx` (context window) percentage is now colour‑coded, keyed to when it
+  pays to run `/compact` rather than to billing: green `<70%`, yellow `70–84%`,
+  red `≥85%` (auto‑compact imminent). New `CTX_YELLOW_AT` (70) / `CTX_RED_AT`
+  (85) config thresholds; `color_for` now takes optional threshold arguments.
+- Tests for the explicit‑threshold `color_for`, the ctx colour bands, and a
+  custom‑`CTX_RED_AT` override.
+
 ## [1.0.1] — 2026-06-09
 
 ### Added

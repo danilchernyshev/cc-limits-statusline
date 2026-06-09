@@ -41,6 +41,11 @@ render() { # stdin_json config_json
 render_rc() { # stdin_json config_json rc_file
   printf '%s' "$1" | CC_STATUSLINE_CONFIG="$2" CC_STATUSLINE_RC="$3" bash "$SCRIPT" | strip_ansi
 }
+# Raw render (ANSI preserved) for asserting on per-field colours. rc defaults to
+# /dev/null for isolation; pass a fixture rc as $3 to exercise overrides.
+render_raw() { # stdin_json config_json [rc_file]
+  printf '%s' "$1" | CC_STATUSLINE_CONFIG="$2" CC_STATUSLINE_RC="${3:-/dev/null}" bash "$SCRIPT"
+}
 
 # Expose the pure functions for unit testing (guard stops the script's main).
 # shellcheck disable=SC1090
@@ -72,6 +77,14 @@ assert_eq "95  -> red single"    "${ESC}[01;31m●${ESC}[0m" "$(dot_for 95)"
 assert_eq "100 -> red single"    "${ESC}[01;31m●${ESC}[0m" "$(dot_for 100)"
 assert_eq "101 -> red double"    "${ESC}[01;31m●●${ESC}[0m" "$(dot_for 101)"
 assert_eq "124 -> red double"    "${ESC}[01;31m●●${ESC}[0m" "$(dot_for 124)"
+
+echo "== unit: color_for with explicit ctx thresholds (compact guidance) =="
+# Defaults to YELLOW_AT/RED_AT, but the ctx field passes CTX_YELLOW_AT/CTX_RED_AT.
+assert_eq "69 (<70) -> green"   "${ESC}[32m"    "$(color_for 69 70 85)"
+assert_eq "70 -> yellow"        "${ESC}[33m"    "$(color_for 70 70 85)"
+assert_eq "84 -> yellow"        "${ESC}[33m"    "$(color_for 84 70 85)"
+assert_eq "85 -> red"           "${ESC}[01;31m" "$(color_for 85 70 85)"
+assert_eq "100 -> red"          "${ESC}[01;31m" "$(color_for 100 70 85)"
 
 echo "== unit: fmt_reset =="
 assert_eq "past timestamp -> now" "now" "$(fmt_reset 0)"
@@ -123,6 +136,20 @@ echo "== integration: empty stdin is graceful =="
 OUT="$(render '{}' "$FIX/config_pro.json")"
 assert_contains "falls back, no crash" "$OUT" "[Pro]"
 assert_contains "zero percentages"     "$OUT" "5h 0%"
+
+echo "== integration: ctx percentage is colour-coded (compact guidance) =="
+# basic fixture ctx=2 -> green; high fixture ctx=92 -> red (default CTX_RED_AT=85).
+RAW="$(render_raw "$(cat "$FIX/stdin_basic.json")" "$FIX/config_max.json")"
+assert_contains "ctx 2% is green"  "$RAW" "ctx${ESC}[0m ${ESC}[32m2%"
+RAW="$(render_raw "$(cat "$FIX/stdin_high.json")" "$FIX/config_max.json")"
+assert_contains "ctx 92% is red"   "$RAW" "ctx${ESC}[0m ${ESC}[01;31m92%"
+
+echo "== config: custom ctx thresholds via rc =="
+# Drop CTX_RED_AT to 2 so the basic fixture's ctx=2 trips red.
+RC_CTX="$(mktemp)"; printf 'CTX_YELLOW_AT=1\nCTX_RED_AT=2\n' > "$RC_CTX"
+RAW="$(render_raw "$(cat "$FIX/stdin_basic.json")" "$FIX/config_max.json" "$RC_CTX")"
+assert_contains "ctx 2% trips red at CTX_RED_AT=2" "$RAW" "ctx${ESC}[0m ${ESC}[01;31m2%"
+rm -f "$RC_CTX"
 
 echo "== config: custom thresholds via rc =="
 # Lower the thresholds so a 55% worst-of-two trips the double dot.
