@@ -94,6 +94,17 @@ PLAN_RAW=$(jq -r '.oauthAccount.organizationType // "?"' "$CFG" 2>/dev/null)
 EXTRA=$(jq -r '.oauthAccount.hasExtraUsageEnabled // false' "$CFG" 2>/dev/null)
 PLAN=$(plan_label "$PLAN_RAW")
 
+# organizationType is generic "claude_max" for every Max tier; the 5x/20x
+# distinction lives only in organizationRateLimitTier. When the plan resolved
+# to a bare "Max", refine it from that field so [Max] becomes [Max 20x].
+if [ "$PLAN" = "Max" ]; then
+  RL_TIER=$(jq -r '.oauthAccount.organizationRateLimitTier // ""' "$CFG" 2>/dev/null)
+  case "$RL_TIER" in
+    *max_20x) PLAN='Max 20x' ;;
+    *max_5x)  PLAN='Max 5x'  ;;
+  esac
+fi
+
 # --- pull every live value we need in a single jq call ---------------------
 # Percentages are rounded to whole numbers (`| round`) so the bar never shows
 # noise like "55.00000000000001%".
@@ -118,22 +129,19 @@ D7_C=$(color_for "$D7I")
 COST_F=$(printf '%.2f' "$COST")
 
 # --- extra-usage indicator + signal ----------------------------------------
-# When paid overage ("extra usage") is enabled, the plan tag gets a "$" marker
-# (e.g. [Pro $]) and an ANSI-coloured ● dot for the WORST of the two limits.
+# Always show an "Extra-Usage-ON: [y/n] sts:●" tag (as its own │-separated
+# field before the cost): [y]/[n] reflects whether paid overage ("extra
+# usage") is enabled, and the ANSI-coloured ● dot signals the WORST of the
+# two limits.
 MAXP=$H5I; [ "$D7I" -gt "$MAXP" ] && MAXP=$D7I
-if [ "$EXTRA" != "true" ]; then
-  PLAN_X=""; MARK=""
-else
-  PLAN_X=' $'
-  MARK="$(dot_for "$MAXP")"
-fi
+if [ "$EXTRA" = "true" ]; then YN='y'; else YN='n'; fi
+EXTRA_TAG=$(printf "Extra-Usage-ON: [%s] sts:%s" "$YN" "$(dot_for "$MAXP")")
 
-# Layout: cwd  [plan $ ●]  model │ 5h │ 7d │ ctx │ 💳 cost
-# The "$" tag + ● signal live inside the plan brackets; 💳 (current-session
-# cost) stays last. ${MAG} is re-applied after ● (which ends in a reset) so the
-# closing bracket keeps the plan colour.
-printf "${BLUE}%s${R} ${MAG}[%s%s%s${MAG}]${R} %s ${DIM}│${R} 5h ${H5_C}%s%%${R} ${DIM}(%s)${R} ${DIM}│${R} 7d ${D7_C}%s%%${R} ${DIM}(%s)${R} ${DIM}│ ctx %s%%${R} ${DIM}│${R} 💳 \$%s" \
-  "$CWD" "$PLAN" "$PLAN_X" "$MARK" "$MODEL" \
+# Layout: cwd  [plan]  model │ 5h │ 7d │ ctx │ Extra-Usage-ON: [y/n] sts:● │ 💳 cost
+# Only the plan is bracketed; the overage tag is its own field right before the
+# cost. 💳 (current-session cost) stays last.
+printf "${BLUE}%s${R} ${MAG}[%s]${R} %s ${DIM}│${R} 5h ${H5_C}%s%%${R} ${DIM}(%s)${R} ${DIM}│${R} 7d ${D7_C}%s%%${R} ${DIM}(%s)${R} ${DIM}│ ctx %s%%${R} ${DIM}│${R} %s ${DIM}│${R} 💳 \$%s" \
+  "$CWD" "$PLAN" "$MODEL" \
   "$H5_PCT" "$(fmt_reset "$H5_RESET")" \
   "$D7_PCT" "$(fmt_reset "$D7_RESET")" \
-  "$CTX" "$COST_F"
+  "$CTX" "$EXTRA_TAG" "$COST_F"

@@ -8,20 +8,21 @@ you instantly know whether you're about to start paying for overage.
 ![cc-limits-statusline demo](assets/demo.svg)
 
 ```
-~/dev/myproject [Pro $●] Claude Opus 4.8 │ 5h 42% (3h 12m) │ 7d 18% (5d 4h) │ ctx 31% │ 💳 $0.00
+~/dev/myproject [Max 20x] Claude Opus 4.8 │ 5h 42% (3h 12m) │ 7d 18% (5d 4h) │ ctx 31% │ Extra-Usage-ON: [y] sts:● │ 💳 $0.00
 ```
 
 ## What it shows
 
-| Field            | Meaning                                                              |
-| ---------------- | ------------------------------------------------------------------- |
-| `~/dev/myproject`| Current working directory                                           |
-| `[Pro $●]`       | Your subscription plan. The `$` and the coloured `●` appear inside the brackets only when **extra usage** (paid overage) is enabled — see below |
-| `Claude Opus 4.8`| Active model                                                        |
-| `5h 42% (3h 12m)`| 5‑hour session limit used, and time until it resets                |
-| `7d 18% (5d 4h)` | 7‑day weekly limit used, and time until it resets                  |
-| `ctx 31%`        | Context window used                                                |
-| `💳 $0.00`       | **Money, kept last:** cost of the *current session* (paid overage / credits) |
+| Field                       | Meaning                                                              |
+| --------------------------- | ------------------------------------------------------------------- |
+| `~/dev/myproject`           | Current working directory                                           |
+| `[Max 20x]`                 | Your subscription plan                                             |
+| `Claude Opus 4.8`           | Active model                                                        |
+| `5h 42% (3h 12m)`           | 5‑hour session limit used, and time until it resets                |
+| `7d 18% (5d 4h)`            | 7‑day weekly limit used, and time until it resets                  |
+| `ctx 31%`                   | Context window used                                                |
+| `Extra-Usage-ON: [y] sts:●` | Whether **extra usage** (paid overage) is enabled (`[y]`/`[n]`), and a coloured `●` status dot — see below |
+| `💳 $0.00`                  | **Money, kept last:** cost of the *current session* (paid overage / credits) |
 
 All percentages are rounded to whole numbers.
 
@@ -30,9 +31,9 @@ Percentages are colour‑coded: **green** `<80%`, **yellow** `80–94%`,
 
 ### The extra‑usage signal
 
-When **extra usage** (paid overage) is enabled on your account, the plan tag
-shows a `$` and a coloured `●` dot **inside the brackets** (`[Pro $●]`). The
-dot's colour reflects the **worst** of your two limits:
+The `Extra-Usage-ON:` field shows whether **extra usage** (paid overage) is
+enabled on your account — `[y]` when it is, `[n]` when it isn't — followed by a
+`sts:` status dot. The dot's colour reflects the **worst** of your two limits:
 
 | Sign  | When                          | Meaning                                  |
 | ----- | ----------------------------- | ---------------------------------------- |
