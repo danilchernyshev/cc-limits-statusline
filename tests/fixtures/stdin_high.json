@@ -1,0 +1,10 @@
+{
+  "cwd": "~/lab",
+  "model": { "display_name": "Claude Opus 4.8" },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 124.2, "resets_at": 0 },
+    "seven_day": { "used_percentage": 88, "resets_at": 0 }
+  },
+  "cost": { "total_cost_usd": 4.8 },
+  "context_window": { "used_percentage": 92 }
+}

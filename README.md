@@ -8,7 +8,7 @@ you instantly know whether you're about to start paying for overage.
 ![cc-limits-statusline demo](assets/demo.svg)
 
 ```
-~/dev/myproject [Pro $ ●] Claude Opus 4.8 │ 5h 42% (3h 12m) │ 7d 18% (5d 4h) │ ctx 31% │ 💳 $0.00
+~/dev/myproject [Pro $●] Claude Opus 4.8 │ 5h 42% (3h 12m) │ 7d 18% (5d 4h) │ ctx 31% │ 💳 $0.00
 ```
 
 ## What it shows
@@ -16,7 +16,7 @@ you instantly know whether you're about to start paying for overage.
 | Field            | Meaning                                                              |
 | ---------------- | ------------------------------------------------------------------- |
 | `~/dev/myproject`| Current working directory                                           |
-| `[Pro $ ●]`      | Your subscription plan. The `$` and the coloured `●` appear inside the brackets only when **extra usage** (paid overage) is enabled — see below |
+| `[Pro $●]`       | Your subscription plan. The `$` and the coloured `●` appear inside the brackets only when **extra usage** (paid overage) is enabled — see below |
 | `Claude Opus 4.8`| Active model                                                        |
 | `5h 42% (3h 12m)`| 5‑hour session limit used, and time until it resets                |
 | `7d 18% (5d 4h)` | 7‑day weekly limit used, and time until it resets                  |
@@ -31,7 +31,7 @@ Percentages are colour‑coded: **green** `<80%`, **yellow** `80–94%`,
 ### The extra‑usage signal
 
 When **extra usage** (paid overage) is enabled on your account, the plan tag
-shows a `$` and a coloured `●` dot **inside the brackets** (`[Pro $ ●]`). The
+shows a `$` and a coloured `●` dot **inside the brackets** (`[Pro $●]`). The
 dot's colour reflects the **worst** of your two limits:
 
 | Sign  | When                          | Meaning                                  |
@@ -108,9 +108,34 @@ cc-limits-statusline`.
 ## How it works
 
 Claude Code pipes a JSON blob to the statusline command on stdin every time it
-refreshes. The script reads the live `rate_limits`, `cost`, and `context_window`
-fields from that JSON, and reads the plan name + extra‑usage flag from
-`~/.claude.json`. No network calls, no extra state.
+refreshes. The script reads the **live** `rate_limits`, `cost`, and
+`context_window` fields from that JSON, and reads the plan name + extra‑usage
+flag from the **cached** config `~/.claude.json`. No network calls, no extra
+state.
+
+The two sources have different freshness. The stdin fields are live per refresh.
+The plan name is *not* on stdin — it only exists in `~/.claude.json`, which
+Claude Code rewrites on **auth events** (login / token refresh / restart), not in
+real time. You can point the script at a different config with the
+`CC_STATUSLINE_CONFIG` environment variable (the test suite uses this).
+
+> **Plan still shows the old tier after upgrading?** That's the cache above.
+> After you upgrade (e.g. Pro → Max) on the web, **restart Claude Code** so it
+> re‑authenticates and rewrites `~/.claude.json`; the statusline then shows the
+> new plan. There is no live plan field to read instead.
+
+## Tests
+
+A zero‑dependency test suite (just `bash` + `jq`) covers plan parsing, percentage
+rounding, the extra‑usage dot thresholds, and the layout:
+
+```bash
+bash tests/run.sh
+```
+
+It feeds fixture JSON to `statusline.sh` (via `CC_STATUSLINE_CONFIG`) and asserts
+against the rendered line, and unit‑tests the pure functions by sourcing the
+script.
 
 ## Uninstall
 
