@@ -24,8 +24,9 @@ env:
 
 jobs:
   build:
-    # Pin the image instead of windows-latest, which auto-migrates to this on
-    # 2026-06-15 — pinning silences the redirect notice and keeps builds reproducible.
+    # Pin the image instead of windows-latest, for reproducible builds. (GitHub
+    # still redirects this to windows-2025-vs2026 around 2026-06-15 — that notice
+    # is an unavoidable image migration, not something a label can suppress.)
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v5
