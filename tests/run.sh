@@ -65,17 +65,17 @@ assert_eq "unknown -> stripped fallback" "experimental" "$(plan_label claude_exp
 echo "== unit: color_for (worst-of thresholds) =="
 assert_eq "79 -> green"  "${ESC}[32m"    "$(color_for 79)"
 assert_eq "80 -> yellow" "${ESC}[33m"    "$(color_for 80)"
-assert_eq "94 -> yellow" "${ESC}[33m"    "$(color_for 94)"
-assert_eq "95 -> red"    "${ESC}[01;31m" "$(color_for 95)"
+assert_eq "99 -> yellow" "${ESC}[33m"    "$(color_for 99)"
 assert_eq "100 -> red"   "${ESC}[01;31m" "$(color_for 100)"
+assert_eq "119 -> red"   "${ESC}[01;31m" "$(color_for 119)"
 
 echo "== unit: dot_for (glyph + colour by threshold) =="
 assert_eq "79  -> green single"  "${ESC}[32m●${ESC}[0m"    "$(dot_for 79)"
 assert_eq "80  -> yellow single" "${ESC}[33m●${ESC}[0m"    "$(dot_for 80)"
-assert_eq "94  -> yellow single" "${ESC}[33m●${ESC}[0m"    "$(dot_for 94)"
-assert_eq "95  -> red single"    "${ESC}[01;31m●${ESC}[0m" "$(dot_for 95)"
+assert_eq "99  -> yellow single" "${ESC}[33m●${ESC}[0m"    "$(dot_for 99)"
 assert_eq "100 -> red single"    "${ESC}[01;31m●${ESC}[0m" "$(dot_for 100)"
-assert_eq "101 -> red double"    "${ESC}[01;31m●●${ESC}[0m" "$(dot_for 101)"
+assert_eq "119 -> red single"    "${ESC}[01;31m●${ESC}[0m" "$(dot_for 119)"
+assert_eq "120 -> red double"    "${ESC}[01;31m●●${ESC}[0m" "$(dot_for 120)"
 assert_eq "124 -> red double"    "${ESC}[01;31m●●${ESC}[0m" "$(dot_for 124)"
 
 echo "== unit: color_for with explicit ctx thresholds (compact guidance) =="
@@ -112,8 +112,8 @@ assert_contains "double dot in tag" "$OUT" "Extra-Usage: ON ●●"
 assert_contains "124% shown"        "$OUT" "5h 124%"
 
 echo "== integration: worst-of-two picks the 7d window =="
-# 5h low (10%), 7d at the limit (96%) -> single red dot from the 7d side.
-OUT="$(render '{"rate_limits":{"five_hour":{"used_percentage":10},"seven_day":{"used_percentage":96}}}' "$FIX/config_max.json" | strip_ansi)"
+# 5h low (10%), 7d over the limit (105%) -> single red dot from the 7d side.
+OUT="$(render '{"rate_limits":{"five_hour":{"used_percentage":10},"seven_day":{"used_percentage":105}}}' "$FIX/config_max.json" | strip_ansi)"
 assert_contains "dot reflects worst (7d)" "$OUT" "Extra-Usage: ON ●"
 
 echo "== integration: extra usage state OFF -> shows OFF, no dot =="

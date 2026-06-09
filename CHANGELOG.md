@@ -13,6 +13,13 @@ All notable changes to this project are documented here. The format is based on
 - Tests for the explicit‑threshold `color_for`, the ctx colour bands, and a
   custom‑`CTX_RED_AT` override.
 
+### Changed
+- Widened the default colour bands so red signals an *actual* overage: `RED_AT`
+  `95 → 100` and `DOUBLE_AT` `101 → 120`. The worst‑of‑two limit (and its dot)
+  is now green `<80%`, yellow `80–99%`, red `100–119%`, double‑red `≥120%`. This
+  also colours the 5h/7d percentages, so they only turn red once you have truly
+  hit the limit.
+
 ## [1.0.1] — 2026-06-09
 
 ### Added

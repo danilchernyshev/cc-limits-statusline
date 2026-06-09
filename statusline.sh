@@ -33,8 +33,8 @@ CFG="${CC_STATUSLINE_CONFIG:-$HOME/.claude.json}"
 #   RED_AT..DOUBLE_AT-1  red ●   (at the limit → paid overage about to start)
 #   >= DOUBLE_AT         red ●●  (over the limit, paid overage is active)
 YELLOW_AT=${YELLOW_AT:-80}
-RED_AT=${RED_AT:-95}
-DOUBLE_AT=${DOUBLE_AT:-101}
+RED_AT=${RED_AT:-100}
+DOUBLE_AT=${DOUBLE_AT:-120}
 
 # Context-window thresholds — keyed to when it pays to run /compact, NOT to
 # billing (a full context costs nothing, it just gets auto-compacted). Claude
@@ -88,10 +88,10 @@ color_for() {
 # --- the ANSI-coloured extra-usage dot for the worst-of-two percentage ------
 # Colours match color_for; a plain text glyph (U+25CF) is used instead of a
 # 🟢/🔴 emoji so the colour comes from ANSI and tracks the terminal theme:
-#   ● green  < YELLOW_AT            (plenty of headroom, not spending money)
-#   ● yellow YELLOW_AT..RED_AT-1    (getting close to the limit)
-#   ● red    RED_AT..DOUBLE_AT-1    (at the limit → paid overage starting/active)
-#   ●● red   ≥ DOUBLE_AT            (over the limit, paid overage is active)
+#   ● green  < YELLOW_AT (80)          (plenty of headroom, not spending money)
+#   ● yellow YELLOW_AT..RED_AT-1 (80-99)   (getting close to the limit)
+#   ● red    RED_AT..DOUBLE_AT-1 (100-119) (at the limit → paid overage active)
+#   ●● red   ≥ DOUBLE_AT (120)         (well over the limit, paid overage active)
 dot_for() {
   local p=$1
   if   [ "$p" -ge "$DOUBLE_AT" ]; then printf '\033[01;31m●●\033[0m'
