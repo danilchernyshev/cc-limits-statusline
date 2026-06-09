@@ -22,5 +22,5 @@
   <text x="24" y="194" fill="#c9d1d9" xml:space="preserve"><tspan fill="#58a6ff" font-weight="bold">~/lab </tspan><tspan fill="#d2a8ff" font-weight="bold">[Max 20x]</tspan> Claude Opus 4.8 <tspan fill="#6e7681">│ </tspan>5h <tspan fill="#f85149" font-weight="bold">124% </tspan><tspan fill="#6e7681">(8m) │ </tspan>7d <tspan fill="#d29922">88% </tspan><tspan fill="#6e7681">(18h 4m) │ ctx </tspan><tspan fill="#f85149">92%</tspan><tspan fill="#6e7681"> │ </tspan>Extra-Usage: ON <tspan fill="#f85149" font-weight="bold">●●</tspan> <tspan fill="#6e7681">│ </tspan>💳 $4.80</text>
 
   <!-- legend — extra-usage signal (matches the thresholds in statusline.sh) -->
-  <text x="24" y="230" fill="#6e7681" font-size="12.5" xml:space="preserve">extra-usage dot (shown only when ON):  <tspan fill="#3fb950">●</tspan> &lt;80% headroom    <tspan fill="#d29922">●</tspan> 80–94% near limit    <tspan fill="#f85149">●</tspan> 95–100% at limit    <tspan fill="#f85149">●●</tspan> ≥101% over</text>
+  <text x="24" y="230" fill="#6e7681" font-size="12.5" xml:space="preserve">extra-usage dot (shown only when ON):  <tspan fill="#3fb950">●</tspan> &lt;80% headroom    <tspan fill="#d29922">●</tspan> 80–99% near limit    <tspan fill="#f85149">●</tspan> 100–119% at limit    <tspan fill="#f85149">●●</tspan> ≥120% over</text>
 </svg>

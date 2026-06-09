@@ -27,7 +27,7 @@ you instantly know whether you're about to start paying for overage.
 All percentages are rounded to whole numbers.
 
 The rate‑limit percentages are colour‑coded: **green** `<80%`, **yellow**
-`80–94%`, **red** `≥95%`.
+`80–99%`, **red** `≥100%`.
 
 The `ctx` percentage uses its **own** thresholds, keyed to when it pays to run
 `/compact` rather than to billing (a full context costs nothing — Claude Code
@@ -46,9 +46,9 @@ a status dot follows whose colour reflects the **worst** of your two limits
 | Sign  | When                          | Meaning                                  |
 | ----- | ----------------------------- | ---------------------------------------- |
 | 🟢 `●` | worst limit `< 80%`          | Enabled, plenty of headroom — not paying |
-| 🟡 `●` | `80–94%`                     | Getting close to the limit               |
-| 🔴 `●` | `95–100%`                    | At the limit → paid overage about to start / active |
-| 🔴 `●●`| `≥ 101%` (`DOUBLE_AT`)       | Over the limit, paid overage is active   |
+| 🟡 `●` | `80–99%`                     | Getting close to the limit               |
+| 🔴 `●` | `100–119%`                   | At the limit → paid overage active       |
+| 🔴 `●●`| `≥ 120%` (`DOUBLE_AT`)       | Well over the limit, paid overage is active |
 
 > **Why a text `●` and not ⚡ or a 🟢 emoji?** Emoji like ⚡ are rendered by the
 > terminal in their own fixed colour and ignore ANSI colour codes, so a
@@ -75,8 +75,8 @@ percentages:
 
 ```bash
 YELLOW_AT=80    # >= this → 🟡 yellow (getting close)
-RED_AT=95       # >= this → 🔴 red    (at the limit, overage starting)
-DOUBLE_AT=101   # >= this → 🔴 ●●     (over the limit, overage active)
+RED_AT=100      # >= this → 🔴 red    (at the limit, paid overage active)
+DOUBLE_AT=120   # >= this → 🔴 ●●     (well over the limit, overage active)
 ```
 
 The `ctx` field has its own pair, keyed to when to `/compact` (not billing):
