@@ -1,0 +1,47 @@
+name: Windows installer
+
+# Builds the .exe installer with Inno Setup. Verifies the build on PRs that touch
+# the Windows packaging, and attaches the installer to GitHub Releases on tags.
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    paths:
+      - 'windows/**'
+      - 'statusline.sh'
+      - 'config.example.conf'
+      - '.github/workflows/windows-installer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to upload the asset to a release
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test installer logic (PowerShell)
+        shell: pwsh
+        run: ./windows/tests/run.ps1
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Compile installer
+        run: iscc windows\cc-limits-statusline.iss
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cc-limits-statusline-setup
+          path: windows/Output/cc-limits-statusline-setup.exe
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.ref_name }}" windows/Output/cc-limits-statusline-setup.exe --clobber

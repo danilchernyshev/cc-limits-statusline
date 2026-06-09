@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Windows `.exe` installer.** A double‑clickable setup (built with Inno Setup)
+  that auto‑installs the runtime dependencies via winget (`jq` and Git for Windows
+  for `bash`), copies `statusline.sh`, wires up `settings.json` with the absolute
+  path to `bash.exe` (works without touching PATH), and seeds the default config.
+  The logic lives in `windows/install-steps.ps1` (and `uninstall-steps.ps1`),
+  which also run standalone via `irm … | iex`; the `.exe` is built by the
+  `windows-installer` GitHub Actions workflow and attached to releases. The
+  installer logic has a zero-dependency PowerShell test suite
+  (`windows/tests/run.ps1`, run in CI). README's Windows section now leads with
+  this installer.
 - The `ctx` (context window) percentage is now colour‑coded, keyed to when it
   pays to run `/compact` rather than to billing: green `<70%`, yellow `70–84%`,
   red `≥85%` (auto‑compact imminent). New `CTX_YELLOW_AT` (70) / `CTX_RED_AT`
