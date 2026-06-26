@@ -1,0 +1,55 @@
+name: Windows installer
+
+# Builds the .exe installer with Inno Setup. Verifies the build on PRs that touch
+# the Windows packaging, and attaches the installer to GitHub Releases on tags.
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    paths:
+      - 'windows/**'
+      - 'statusline.sh'
+      - 'config.example.conf'
+      - '.github/workflows/windows-installer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to upload the asset to a release
+
+# upload-artifact@v5 still ships a Node 20 entrypoint; opt into Node 24 now so the
+# runner stops flagging it (it is forced anyway from 2026-06-16).
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  build:
+    # Pin the image instead of windows-latest, for reproducible builds. (GitHub
+    # still redirects this to windows-2025-vs2026 around 2026-06-15 — that notice
+    # is an unavoidable image migration, not something a label can suppress.)
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Test installer logic (PowerShell)
+        shell: pwsh
+        run: ./windows/tests/run.ps1
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Compile installer
+        run: iscc windows\cc-limits-statusline.iss
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: cc-limits-statusline-setup
+          path: windows/Output/cc-limits-statusline-setup.exe
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.ref_name }}" windows/Output/cc-limits-statusline-setup.exe --clobber

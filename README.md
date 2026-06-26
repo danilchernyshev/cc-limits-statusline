@@ -111,40 +111,149 @@ SHOW_COST=1     # 💳 $0.00        — current-session cost
 ## Requirements
 
 - [Claude Code](https://claude.com/claude-code)
-- [`jq`](https://stedolan.github.io/jq/) (`sudo apt install jq` / `brew install jq`)
-- A POSIX shell (`bash`)
+- A `bash` shell + [`jq`](https://stedolan.github.io/jq/)
+
+`bash` ships with Linux and macOS; on Windows you provide it via WSL or Git Bash.
+Pick your OS under [Install](#install) for an explicit, end‑to‑end walkthrough.
 
 ## Install
 
-### Option A — install script (any setup)
+Pick your OS for a complete walkthrough. The steps are similar across platforms —
+each one is spelled out in full so you never have to jump between sections. After
+any of them, **reload Claude Code** to see the statusline.
 
-```bash
-git clone https://github.com/danilchernyshev/cc-limits-statusline.git
-cd cc-limits-statusline
-bash install.sh
-```
+### Linux
 
-…or as a one‑liner:
+1. Install `jq` (`bash` is already on your system):
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/danilchernyshev/cc-limits-statusline/main/install.sh | bash
-```
+   ```bash
+   sudo apt install jq      # Debian / Ubuntu
+   sudo dnf install jq      # Fedora / RHEL
+   sudo pacman -S jq        # Arch
+   ```
 
-The installer copies `statusline.sh` into `~/.claude/` and adds this to your
-`~/.claude/settings.json` (backing it up first):
+2. Clone the repo and run the installer:
 
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "bash /home/you/.claude/statusline.sh"
-  }
-}
-```
+   ```bash
+   git clone https://github.com/danilchernyshev/cc-limits-statusline.git
+   cd cc-limits-statusline
+   bash install.sh
+   ```
 
-Reload Claude Code and you're done.
+3. Reload Claude Code. Done.
 
-### Option B — as a Claude Code plugin (marketplace)
+The installer copies `statusline.sh` into `~/.claude/`, wires it into
+`~/.claude/settings.json` (backing the file up first), and seeds a default config
+at `~/.config/cc-limits-statusline.conf`.
+
+### macOS
+
+1. Install `jq` with [Homebrew](https://brew.sh) (`bash` is already on your system):
+
+   ```bash
+   brew install jq
+   ```
+
+2. Clone the repo and run the installer:
+
+   ```bash
+   git clone https://github.com/danilchernyshev/cc-limits-statusline.git
+   cd cc-limits-statusline
+   bash install.sh
+   ```
+
+3. Reload Claude Code. Done.
+
+The installer copies `statusline.sh` into `~/.claude/`, wires it into
+`~/.claude/settings.json` (backing the file up first), and seeds a default config
+at `~/.config/cc-limits-statusline.conf`.
+
+### Windows
+
+The statusline is a bash script, so a `bash` environment is required at runtime.
+Choose **one** of the three routes below — the `.exe` installer is the simplest.
+
+#### Route 1 — Installer (`.exe`, recommended)
+
+A double-clickable installer that does everything for you.
+
+1. Download **`cc-limits-statusline-setup.exe`** from the
+   [latest release](https://github.com/danilchernyshev/cc-limits-statusline/releases/latest).
+2. Run it. It **auto-installs the dependencies via winget** — `jq` and Git for
+   Windows (which provides `bash`) — then copies `statusline.sh`, wires up
+   `settings.json` (absolute path to `bash.exe`, so it works without touching your
+   PATH), and seeds the default config. The first run can take a few minutes while
+   winget downloads.
+3. Reload Claude Code. Done. Uninstall later from **Apps & features**.
+
+> Needs [winget](https://learn.microsoft.com/windows/package-manager/winget/)
+> (built into Windows 10 21H2+ / Windows 11). Prefer not to use an installer?
+> The same logic runs standalone in PowerShell:
+> ```powershell
+> irm https://raw.githubusercontent.com/danilchernyshev/cc-limits-statusline/main/windows/install-steps.ps1 | iex
+> ```
+
+#### Route 2 — WSL
+
+Runs Claude Code inside a real Linux environment, so everything matches the Linux
+instructions exactly.
+
+1. Install [WSL](https://learn.microsoft.com/windows/wsl/install) (PowerShell, once):
+
+   ```powershell
+   wsl --install
+   ```
+
+2. Open your WSL distro (e.g. Ubuntu) and install `jq`:
+
+   ```bash
+   sudo apt install jq
+   ```
+
+3. Clone the repo and run the installer **inside WSL**:
+
+   ```bash
+   git clone https://github.com/danilchernyshev/cc-limits-statusline.git
+   cd cc-limits-statusline
+   bash install.sh
+   ```
+
+4. Reload Claude Code (running inside WSL). Done.
+
+#### Route 3 — Native + Git Bash (manual)
+
+The same steps the `.exe` automates, done by hand — for running Claude Code on
+Windows directly, without WSL.
+
+1. Install [Git for Windows](https://git-scm.com/download/win) — it bundles the
+   `bash` shell the statusline needs.
+
+2. Install `jq` (PowerShell):
+
+   ```powershell
+   winget install jqlang.jq
+   # or: scoop install jq   |   choco install jq
+   ```
+
+3. Open the **Git Bash** terminal (not PowerShell or `cmd`), then clone and install:
+
+   ```bash
+   git clone https://github.com/danilchernyshev/cc-limits-statusline.git
+   cd cc-limits-statusline
+   bash install.sh
+   ```
+
+4. Reload Claude Code. Done.
+
+The installer copies `statusline.sh` into `~/.claude/`, wires it into
+`~/.claude/settings.json` (backing the file up first), and seeds a default config
+at `~/.config/cc-limits-statusline.conf`.
+
+## Other install methods
+
+These work on every OS once `bash` + `jq` are in place (see your OS above).
+
+### As a Claude Code plugin (marketplace)
 
 This repo doubles as its own Claude Code marketplace. From inside Claude Code:
 
@@ -156,6 +265,23 @@ This repo doubles as its own Claude Code marketplace. From inside Claude Code:
 The plugin contributes the statusline via `${CLAUDE_PLUGIN_ROOT}/statusline.sh`,
 so there's nothing to copy by hand. Update later with `/plugin marketplace update
 cc-limits-statusline`.
+
+### One-liner (no clone)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/danilchernyshev/cc-limits-statusline/main/install.sh | bash
+```
+
+Adds the same `statusLine` block to `~/.claude/settings.json`:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "bash /home/you/.claude/statusline.sh"
+  }
+}
+```
 
 ### Manual install
 
