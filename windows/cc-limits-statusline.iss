@@ -11,7 +11,7 @@
 ; .claude-plugin/plugin.json, .claude-plugin/marketplace.json and CHANGELOG.md.
 
 #define MyAppName "cc-limits-statusline"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "Danil Chernyshev"
 #define MyAppURL "https://github.com/danilchernyshev/cc-limits-statusline"
 

@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-06-26
+
 ### Added
 - **Reasoning effort next to the model.** When the active model exposes an
   `effort.level` on stdin, the line shows it after the model name
