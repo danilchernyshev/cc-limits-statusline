@@ -8,7 +8,7 @@ you instantly know whether you're about to start paying for overage.
 ![cc-limits-statusline demo](assets/demo.svg)
 
 ```
-~/dev/myproject [Max 20x] Claude Opus 4.8 │ 5h 42% (3h 12m) │ 7d 18% (5d 4h) │ ctx 31% │ Extra-Usage: ON ● │ 💳 $0.00
+~/dev/myproject [Max 20x] Claude Opus 4.8 High │ 5h 42% (3h 12m) │ 7d 18% (5d 4h) │ ctx 31% │ Extra-Usage: ON ● │ 💳 $0.00
 ```
 
 ## What it shows
