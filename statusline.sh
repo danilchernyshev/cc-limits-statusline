@@ -78,6 +78,7 @@ apply_defaults() {
   SHOW_CWD=$(flag_or "${SHOW_CWD-}" 1)      # ~/dev/myproject — current working dir
   SHOW_PLAN=$(flag_or "${SHOW_PLAN-}" 1)    # [Max 20x]       — subscription plan
   SHOW_MODEL=$(flag_or "${SHOW_MODEL-}" 1)  # Claude Opus 4.8 — active model
+  SHOW_EFFORT=$(flag_or "${SHOW_EFFORT-}" 1) # High           — reasoning effort
   SHOW_5H=$(flag_or "${SHOW_5H-}" 1)        # 5h 42% (3h 12m) — 5-hour window
   SHOW_7D=$(flag_or "${SHOW_7D-}" 1)        # 7d 18% (5d 4h)  — 7-day window
   SHOW_CTX=$(flag_or "${SHOW_CTX-}" 1)      # ctx 31%         — context window used
@@ -99,6 +100,37 @@ plan_label() {
     claude_enterprise*) printf 'Enterprise' ;;
     "?"|"")             printf '?' ;;
     *)                  printf '%s' "${1#claude_}" ;;   # fallback: show as-is
+  esac
+}
+
+# --- map the raw effort.level to a short capitalised label -----------------
+# effort.level (from stdin) is one of low/medium/high/xhigh/max, or absent when
+# the model doesn't support the reasoning-effort parameter (then EFFORT is empty
+# and the field is dropped entirely). Unknown future levels are shown as-is.
+effort_label() {
+  case "$1" in
+    low)    printf 'Low' ;;
+    medium) printf 'Medium' ;;
+    high)   printf 'High' ;;
+    xhigh)  printf 'XHigh' ;;
+    max)    printf 'Max' ;;
+    *)      printf '%s' "$1" ;;   # fallback: show as-is
+  esac
+}
+
+# --- colour the effort label by level: green (low) … red (max) --------------
+# A distinct colour per level so it reads apart from the (uncoloured) model
+# name, anchored green (low) → red (max) to echo the limit-bar intuition (more
+# effort = more thinking time/cost); the cyan/magenta mid-steps just keep the
+# five levels visually separable.
+effort_color() {
+  case "$1" in
+    low)    printf '\033[32m' ;;     # green
+    medium) printf '\033[36m' ;;     # cyan
+    high)   printf '\033[33m' ;;     # yellow
+    xhigh)  printf '\033[35m' ;;     # magenta
+    max)    printf '\033[01;31m' ;;  # red (bold)
+    *)      printf '\033[36m' ;;     # fallback: cyan
   esac
 }
 
@@ -182,7 +214,7 @@ fi
 # --- pull every live value we need in a single jq call ---------------------
 # Percentages are rounded to whole numbers (`| round`) so the bar never shows
 # noise like "55.00000000000001%".
-IFS=$'\t' read -r CWD MODEL H5_PCT H5_RESET D7_PCT D7_RESET COST CTX <<EOF
+IFS=$'\t' read -r CWD MODEL H5_PCT H5_RESET D7_PCT D7_RESET COST CTX EFFORT <<EOF
 $(printf '%s' "$input" | jq -r '
   [ .cwd // .workspace.current_dir // "?",
     .model.display_name // "?",
@@ -191,7 +223,8 @@ $(printf '%s' "$input" | jq -r '
     (.rate_limits.seven_day.used_percentage // 0 | round),
     (.rate_limits.seven_day.resets_at // 0),
     (.cost.total_cost_usd // 0),
-    (.context_window.used_percentage // 0 | round)
+    (.context_window.used_percentage // 0 | round),
+    (.effort.level // "")
   ] | @tsv')
 EOF
 
@@ -234,7 +267,16 @@ add() { # value  — append with the │ separator, or as the first field
 HDR=""
 [ "$SHOW_CWD" = 1 ]   && HDR=$(printf "${BLUE}%s${R}" "$CWD")
 [ "$SHOW_PLAN" = 1 ]  && HDR="${HDR:+$HDR }$(printf "${MAG}[%s]${R}" "$PLAN")"
-[ "$SHOW_MODEL" = 1 ] && HDR="${HDR:+$HDR }$MODEL"
+if [ "$SHOW_MODEL" = 1 ]; then
+  MODEL_F=$MODEL
+  # Append the reasoning effort ("Opus 4.8 High") in its own colour. Only when
+  # the model exposes it (EFFORT non-empty) and the field is enabled, so models
+  # without effort and SHOW_EFFORT=0 both render the plain model name.
+  if [ "$SHOW_EFFORT" = 1 ] && [ -n "$EFFORT" ]; then
+    MODEL_F=$(printf "%s $(effort_color "$EFFORT")%s${R}" "$MODEL" "$(effort_label "$EFFORT")")
+  fi
+  HDR="${HDR:+$HDR }$MODEL_F"
+fi
 add "$HDR"
 
 [ "$SHOW_5H" = 1 ]    && add "$(printf "5h ${H5_C}%s%%${R} ${DIM}(%s)${R}" "$H5_PCT" "$(fmt_reset "$H5_RESET")")"
