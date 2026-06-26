@@ -17,7 +17,7 @@ you instantly know whether you're about to start paying for overage.
 | --------------------------- | ------------------------------------------------------------------- |
 | `~/dev/myproject`           | Current working directory                                           |
 | `[Max 20x]`                 | Your subscription plan                                             |
-| `Claude Opus 4.8`           | Active model                                                        |
+| `Claude Opus 4.8 High`      | Active model, with the reasoning **effort** level when the model exposes one (`Low`/`Medium`/`High`/`XHigh`/`Max`, colour‑coded green → red as effort rises) |
 | `5h 42% (3h 12m)`           | 5‑hour session limit used, and time until it resets                |
 | `7d 18% (5d 4h)`            | 7‑day weekly limit used, and time until it resets                  |
 | `ctx 31%`                   | Context window used — colour‑coded by how soon you should `/compact` (green → yellow → red) |
@@ -101,6 +101,7 @@ Each field can be toggled with `1` (show) / `0` (hide). Hiding one drops its
 SHOW_CWD=1      # ~/dev/myproject — current working directory
 SHOW_PLAN=1     # [Max 20x]       — subscription plan
 SHOW_MODEL=1    # Claude Opus 4.8 — active model
+SHOW_EFFORT=1   # High           — reasoning effort (when the model exposes it)
 SHOW_5H=1       # 5h 42% (3h 12m) — 5-hour session window
 SHOW_7D=1       # 7d 18% (5d 4h)  — 7-day weekly window
 SHOW_CTX=1      # ctx 31%         — context window used

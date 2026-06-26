@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Reasoning effort next to the model.** When the active model exposes an
+  `effort.level` on stdin, the line shows it after the model name
+  (`Opus 4.8 High`), colour‑coded green → red as effort rises
+  (`Low`/`Medium`/`High`/`XHigh`/`Max`). Absent for models without effort.
+  Toggle with `SHOW_EFFORT` (default on).
 - **Windows `.exe` installer.** A double‑clickable setup (built with Inno Setup)
   that auto‑installs the runtime dependencies via winget (`jq` and Git for Windows
   for `bash`), copies `statusline.sh`, wires up `settings.json` with the absolute

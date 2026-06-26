@@ -63,8 +63,8 @@ the whole point of the design.
 
 Line ~145: `[ "${BASH_SOURCE[0]}" = "${0}" ] || return 0`. When the script is
 *sourced* (the test suite does this), it stops here, exposing only the pure
-functions (`plan_label`, `color_for`, `dot_for`, `fmt_reset`, `int_or`,
-`flag_or`) without reading stdin or printing. Everything after the guard is
+functions (`plan_label`, `effort_label`, `effort_color`, `color_for`, `dot_for`,
+`fmt_reset`, `int_or`, `flag_or`) without reading stdin or printing. Everything after the guard is
 `main`. Keep pure, unit-testable helpers above the guard.
 
 ### Line assembly
